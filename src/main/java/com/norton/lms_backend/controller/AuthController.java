@@ -1,7 +1,11 @@
 package com.norton.lms_backend.controller;
 
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import com.norton.lms_backend.service.AuthService;
+import jakarta.validation.Valid;
+import jakarta.validation.constraints.Email;
+import jakarta.validation.constraints.Positive;
+import lombok.SneakyThrows;
+import org.springframework.web.bind.annotation.*;
 
 import com.norton.lms_backend.exception.InvalidException;
 import com.norton.lms_backend.jwt.JwtService;
@@ -25,47 +29,38 @@ import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.authentication.DisabledException;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.userdetails.UserDetails;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
 
 @RestController
 @RequestMapping("/api/v1/auth")
 @RequiredArgsConstructor
 public class AuthController {
-    private final AppUserService appUserService;
-    private final AuthenticationManager authenticationManager;
-    private final JwtService jwtService;
-
-    private void authenticate(String email, String password) throws Exception {
-        try {
-            authenticationManager
-                    .authenticate(new UsernamePasswordAuthenticationToken(email, password));
-        } catch (DisabledException e) {
-            throw new RuntimeException("USER_DISABLED", e);
-        } catch (BadCredentialsException e) {
-            throw new InvalidException(
-                    "Invalid username, email, or password. Please check your credentials and try again.");
-        }
-    }
+    private final AuthService authService;
 
     @PostMapping("/login")
-    @Operation(summary = "Login")
-    public ResponseEntity<?> login(@RequestBody AuthRequest request) throws Exception {
-        final UserDetails userDetails = appUserService.loadUserByUsername(request.getEmail());
-        authenticate(userDetails.getUsername(), request.getPassword());
-
-        final String token = jwtService.generateToken(userDetails);
-        AuthResponse authResponse = new AuthResponse(token);
-
-        return ResponseUtils.createResponse("Login Successfully", HttpStatus.OK, authResponse);
+    @Operation(summary = "User login")
+    public ResponseEntity<ApiResponse<AuthResponse>> login( @RequestBody AuthRequest request) throws Exception {
+        return ResponseUtils.createResponse("Login successfully", authService.login(request));
     }
 
+    @SneakyThrows
     @PostMapping("/register")
-    public ResponseEntity<ApiResponse<AppUserResponse>> registerNewUser(
-            @RequestBody AppUserRequest request) {
-        AppUserResponse response = appUserService.create(request);
-        // return responseEntity(true, "created user successfully", HttpStatus.CREATED,
-        // response);
-        return ResponseUtils.createResponse("Register new user successsfully", HttpStatus.CREATED, response);
+    @Operation(summary = "Register a new user")
+    public ResponseEntity<ApiResponse<AppUserResponse>> register( @RequestBody AppUserRequest request){
+        return ResponseUtils.createResponse("Register successfully", HttpStatus.CREATED, authService.register(request));
+    }
+
+    @PostMapping("/verify")
+    @Operation(summary = "Verify email with OTP")
+    public ResponseEntity<ApiResponse<Object>> verify(@Email @RequestParam String email, @RequestParam @Positive(message = "Otp code cannot be negative or zero") String otpCode) {
+        authService.verify(email, otpCode);
+        return ResponseUtils.createResponse("Verified successfully!!!");
+    }
+
+    @SneakyThrows
+    @PostMapping("/resend")
+    @Operation(summary = "Resent verification OTP")
+    public ResponseEntity<ApiResponse<Object>> resend(@Email @RequestParam String email) {
+        authService.resend(email);
+        return ResponseUtils.createResponse("OTP has successfully resent");
     }
 }

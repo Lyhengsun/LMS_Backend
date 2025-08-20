@@ -16,4 +16,23 @@ public class ResponseUtils {
                 .build();
         return ResponseEntity.status(httpStatus).body(response);
     }
+
+    public static <T> ResponseEntity<ApiResponse<T>> createResponse(String message, T payload) {
+        ApiResponse<T> response = ApiResponse.<T>builder()
+                .payload(payload)
+                .message(message)
+                .status(HttpStatus.OK)
+                .code(HttpStatus.OK.value())
+                .build();
+        return ResponseEntity.status(HttpStatus.OK).body(response);
+    }
+
+    public static <T> ResponseEntity<ApiResponse<T>> createResponse(String message) {
+        ApiResponse<T> response = ApiResponse.<T>builder()
+                .message(message)
+                .status(HttpStatus.OK)
+                .code(HttpStatus.OK.value())
+                .build();
+        return ResponseEntity.status(HttpStatus.OK).body(response);
+    }
 }

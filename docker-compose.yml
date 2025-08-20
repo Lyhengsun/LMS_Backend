@@ -12,7 +12,49 @@ services:
       - "lms_backend_data:/var/lib/postgresql/data"
     networks:
       - lms_backend_network
-  
+
+  redis:
+    image: redis:6.0.7
+    container_name: redis-edu
+    restart: always
+    volumes:
+      - redis_volume_data:/data
+    ports:
+      - "6379:6379"
+    networks:
+      lms_backend_network:
+        aliases:
+          - redis-local
+
+  redis_insight:
+    image: redislabs/redisinsight:1.14.0
+    container_name: redis_insight-edu
+    restart: always
+    ports:
+      - "8001:8001"
+    volumes:
+      - redis_insight_volume_data:/db
+    depends_on:
+      - redis
+    networks:
+      - lms_backend_network
+
+  storage:
+    image: minio/minio:latest
+    container_name: minio-edu
+    command: server /data --console-address ":9001"
+    environment:
+      MINIO_ROOT_USER: admin
+      MINIO_ROOT_PASSWORD: "@Password123!"
+    ports:
+      - "9000:9000"  # API port
+      - "9001:9001"  # Console port
+    volumes:
+      - storage:/data
+    networks:
+      - lms_backend_network
+
+
   # backend:
   #   build: .
   #   container_name: product-orders-mgmt-container
@@ -32,4 +74,7 @@ networks:
     driver: bridge
 
 volumes:
+  redis_volume_data:
+  redis_insight_volume_data:
   lms_backend_data:
+  storage:
