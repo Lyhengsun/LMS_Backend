@@ -32,7 +32,7 @@ public class SecurityConfig {
     SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         http.cors(Customizer.withDefaults()).csrf(AbstractHttpConfigurer::disable)
                 .authorizeHttpRequests(request -> request
-                        .requestMatchers("/api/v1/auth/**", "/v3/api-docs/**",
+                        .requestMatchers("/api/v1/auth/**", "/v3/api-docs/**", "/api/v1/video/**",
                                 "/swagger-ui/**",
                                 "/swagger-ui.html", "/api/v1/files/**",
                                 "/swagger-ui.html",

@@ -42,6 +42,9 @@ dependencies {
 	implementation 'org.springframework.boot:spring-boot-starter-cache'
 	implementation 'org.springframework.boot:spring-boot-starter-mail'
 
+	// https://mvnrepository.com/artifact/io.minio/minio
+	implementation 'io.minio:minio:8.5.14'
+
 	// JWT Dependencies
 	// https://mvnrepository.com/artifact/io.jsonwebtoken/jjwt-api
 	implementation("io.jsonwebtoken:jjwt-api:0.12.6")
