@@ -61,13 +61,13 @@ public class UserManagementController {
     public ResponseEntity<ApiResponse<Object>> updateDisableUser(@PathVariable("user-id") Long id,
             @RequestParam(defaultValue = "false") @NotNull Boolean isDisable) {
         userManagementService.updateDisableUser(id, isDisable);
-        return ResponseUtils.createResponse("Disable user with id " + id + "successfully");
+        return ResponseUtils.createResponse("Disable user with id " + id + " successfully");
     }
 
     @PatchMapping("update-user/{user-id}/approve")
     public ResponseEntity<ApiResponse<Object>> updateApproveUser(@PathVariable("user-id") Long id) {
         userManagementService.updateApproveUser(id);
-        return ResponseUtils.createResponse("Approve user with id " + id + "successfully");
+        return ResponseUtils.createResponse("Approve user with id " + id + " successfully");
     }
 
 }

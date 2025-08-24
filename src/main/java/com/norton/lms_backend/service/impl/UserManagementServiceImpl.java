@@ -1,5 +1,6 @@
 package com.norton.lms_backend.service.impl;
 
+import com.norton.lms_backend.exception.BadRequestException;
 import com.norton.lms_backend.exception.NotFoundException;
 import com.norton.lms_backend.model.dto.request.AppUserRequest;
 import com.norton.lms_backend.model.dto.response.AppUserResponse;
@@ -70,6 +71,9 @@ public class UserManagementServiceImpl implements UserManagementService {
     @Override
     public void updateApproveUser(Long id) {
         AppUser appUser = findUserById(id);
+        if (appUser.getIsApproved()) {
+            throw new BadRequestException("User is already approved");
+        }
         appUser.setIsApproved(true);
         appUserRepository.save(appUser);
     }
@@ -85,7 +89,7 @@ public class UserManagementServiceImpl implements UserManagementService {
         if (isApproved == null) {
             userResponses = appUserRepository.findAllNonAdminUser(pageable);
         } else {
-            userResponses = appUserRepository.findAllByIsApproved(isApproved, pageable);
+            userResponses = appUserRepository.findAllNonAdminUserByIsApproved(isApproved, pageable);
         }
 
         return PagedResponse.<AppUserResponse>builder()
