@@ -44,6 +44,9 @@ public class AppUser extends BaseEntity implements UserDetails {
     @Column(name = "is_approved", nullable = false)
     private Boolean isApproved;
 
+    @Column(name = "is_disabled", nullable = false)
+    private Boolean isDisabled;
+
     @Column(name = "avatar_url")
     private String avatarUrl;
 
@@ -61,6 +64,9 @@ public class AppUser extends BaseEntity implements UserDetails {
         }
         if (isApproved == null) {
             isApproved = false;
+        }
+        if (isDisabled == null) {
+            isDisabled = false;
         }
     }
 

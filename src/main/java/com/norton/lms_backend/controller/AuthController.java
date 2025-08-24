@@ -1,6 +1,7 @@
 package com.norton.lms_backend.controller;
 
 import com.norton.lms_backend.service.AuthService;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.Positive;
 import lombok.SneakyThrows;
@@ -21,6 +22,7 @@ import org.springframework.http.ResponseEntity;
 @RestController
 @RequestMapping("/api/v1/auth")
 @RequiredArgsConstructor
+@Tag(name = "Authentication", description = "Authenticate users")
 public class AuthController {
     private final AuthService authService;
 

@@ -17,9 +17,11 @@ import com.norton.lms_backend.repository.RoleRepository;
 import com.norton.lms_backend.service.AppUserService;
 
 import lombok.RequiredArgsConstructor;
+import org.springframework.transaction.annotation.Transactional;
 
 @Service
 @RequiredArgsConstructor
+@Transactional
 public class AppUserServiceImpl implements AppUserService {
     private final AppUserRepository appUserRepository;
     private final RoleRepository roleRepository;
