@@ -2,6 +2,11 @@
 spring:
   application:
     name: lms-backend
+  servlet:
+    multipart:
+      max-request-size: 1500MB
+      max-file-size: 1000MB
+
   data:
     redis:
       host: localhost
@@ -38,6 +43,16 @@ spring:
 
 server:
   port: 8090
+
+minio:
+  url: http://localhost:9000
+  username: admin
+  password: "@Password123!"
+  put-object-part-size: 5242880
+
+photon:
+  streaming:
+    default-chunk-size: 3145728
 
 #  cmlv levo yywk jarl
 
