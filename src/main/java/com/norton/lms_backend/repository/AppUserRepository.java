@@ -15,4 +15,7 @@ public interface AppUserRepository extends JpaRepository<AppUser, Long> {
     public Optional<AppUser> findByEmail(String email);
     Page<AppUser> findAllByIsApproved(Boolean isApproved, Pageable pageable);
     Page<AppUser> findAllByIsApprovedIsNull(Pageable pageable);
+
+    @Query("SELECT au FROM AppUser au WHERE au.role.roleName != 'ROLE_ADMIN' AND au.isVerified = true")
+    Page<AppUser> findAllNonAdminUser(Pageable pageable);
 }
