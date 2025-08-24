@@ -53,6 +53,9 @@ public class AppUser extends BaseEntity implements UserDetails {
     @Column(name = "bio", columnDefinition = "TEXT")
     private String bio;
 
+    @Column(name = "phone_number", length = 10, nullable = true)
+    private String phoneNumber;
+
     @ManyToOne(optional = false)
     @JoinColumn(name = "role_id")
     private Role role;
@@ -84,6 +87,7 @@ public class AppUser extends BaseEntity implements UserDetails {
     public AppUserResponse toResponse() {
         return AppUserResponse.builder().id(getId()).createdAt(getCreatedAt()).editedAt(getEditedAt())
                 .fullName(fullName).email(email).isVerified(isVerified).avatarUrl(avatarUrl).bio(bio)
-                .role(role.getRoleName()).isApproved(isApproved).isDisabled(isDisabled).isVerified(isVerified).build();
+                .role(role.getRoleName()).phoneNumber(phoneNumber).isApproved(isApproved).isDisabled(isDisabled)
+                .isVerified(isVerified).build();
     }
 }

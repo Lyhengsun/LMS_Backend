@@ -20,6 +20,7 @@ public class AppUserRequest {
     private String password;
     private String avatarUrl;
     private String bio;
+    private String phoneNumber;
     private Long roleId;
 
     public AppUser toEntity(Role role) {
@@ -29,6 +30,7 @@ public class AppUserRequest {
                 .password(password)
                 .avatarUrl(avatarUrl)
                 .bio(bio)
+                .phoneNumber(phoneNumber)
                 .role(role)
                 .build();
     }
