@@ -84,6 +84,6 @@ public class AppUser extends BaseEntity implements UserDetails {
     public AppUserResponse toResponse() {
         return AppUserResponse.builder().id(getId()).createdAt(getCreatedAt()).editedAt(getEditedAt())
                 .fullName(fullName).email(email).isVerified(isVerified).avatarUrl(avatarUrl).bio(bio)
-                .role(role.getRoleName()).build();
+                .role(role.getRoleName()).isApproved(isApproved).isDisabled(isDisabled).isVerified(isVerified).build();
     }
 }
