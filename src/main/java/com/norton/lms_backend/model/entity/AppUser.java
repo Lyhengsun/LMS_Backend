@@ -41,6 +41,9 @@ public class AppUser extends BaseEntity implements UserDetails {
     @Column(name = "is_verified", nullable = false)
     private Boolean isVerified;
 
+    @Column(name = "is_approved", nullable = false)
+    private Boolean isApproved;
+
     @Column(name = "avatar_url")
     private String avatarUrl;
 
@@ -55,6 +58,9 @@ public class AppUser extends BaseEntity implements UserDetails {
     private void prePersist() {
         if (isVerified == null) {
             isVerified = false;
+        }
+        if (isApproved == null) {
+            isApproved = false;
         }
     }
 

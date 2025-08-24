@@ -24,5 +24,7 @@ public class ApiResponse<T> {
     private HttpStatus status;
     private Integer code;
     @Builder.Default
+    private Boolean success = true;
+    @Builder.Default
     private Instant instant = Instant.now();
 }

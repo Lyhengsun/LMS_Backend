@@ -1,35 +1,23 @@
 package com.norton.lms_backend.controller;
 
 import com.norton.lms_backend.service.AuthService;
-import jakarta.validation.Valid;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.Positive;
 import lombok.SneakyThrows;
 import org.springframework.web.bind.annotation.*;
 
-import com.norton.lms_backend.exception.InvalidException;
-import com.norton.lms_backend.jwt.JwtService;
 import com.norton.lms_backend.model.dto.request.AppUserRequest;
 import com.norton.lms_backend.model.dto.request.AuthRequest;
 import com.norton.lms_backend.model.dto.response.ApiResponse;
 import com.norton.lms_backend.model.dto.response.AppUserResponse;
 import com.norton.lms_backend.model.dto.response.AuthResponse;
-import com.norton.lms_backend.service.AppUserService;
 import com.norton.lms_backend.utils.ResponseUtils;
 
 import io.swagger.v3.oas.annotations.Operation;
 import lombok.RequiredArgsConstructor;
 
-import java.time.LocalDateTime;
-
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.authentication.AuthenticationManager;
-import org.springframework.security.authentication.BadCredentialsException;
-import org.springframework.security.authentication.DisabledException;
-import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
-import org.springframework.security.core.userdetails.UserDetails;
-
 @RestController
 @RequestMapping("/api/v1/auth")
 @RequiredArgsConstructor

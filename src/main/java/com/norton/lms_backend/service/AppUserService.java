@@ -8,5 +8,7 @@ import com.norton.lms_backend.model.dto.response.AppUserResponse;
 public interface AppUserService extends UserDetailsService {
 
     AppUserResponse create(AppUserRequest request);
+
+    AppUserResponse getCurrentUserInfo();
     
 }

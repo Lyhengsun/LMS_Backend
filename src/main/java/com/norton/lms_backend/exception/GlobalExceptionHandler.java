@@ -4,6 +4,8 @@ import java.time.Instant;
 import java.util.HashMap;
 import java.util.Map;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.context.MessageSourceResolvable;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ProblemDetail;
@@ -24,6 +26,7 @@ public class GlobalExceptionHandler {
         problemDetail.setProperty("code", HttpStatus.BAD_REQUEST.value());
         problemDetail.setProperty("timestamp", Instant.now());
         problemDetail.setProperty("error", errors);
+        problemDetail.setProperty("success", false);
         return new ResponseEntity<>(problemDetail, HttpStatus.BAD_REQUEST);
     }
 
@@ -34,6 +37,7 @@ public class GlobalExceptionHandler {
         }
         problemDetail.setProperty("code", status.value());
         problemDetail.setProperty("timestamp", Instant.now());
+        problemDetail.setProperty("success", false);
         problemDetail.setDetail(error);
         return new ResponseEntity<>(problemDetail, status);
     }
@@ -81,5 +85,25 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(InvalidException.class)
     public ResponseEntity<?> handleInvalidException(InvalidException e) {
         return problemDetailResponseEntity(e.getMessage(), HttpStatus.BAD_REQUEST);
+    }
+
+    private static final Logger logger = LoggerFactory.getLogger(ExceptionHandler.class);
+
+    // Handle all unhandled exceptions
+    @ExceptionHandler(Exception.class)
+    public ResponseEntity<?> handleAllUnhandledExceptions(Exception e) {
+        logger.error("Unhandled exception occurred", e);
+        StackTraceElement[] stack = e.getStackTrace();
+        String errorMsg = "";
+        if (stack.length > 0) {
+            StackTraceElement origin = stack[0];
+            errorMsg = e.getClass().getSimpleName() + " at " + origin.getClassName() + "."
+                    + origin.getMethodName() + "(" + origin.getFileName() + ":"
+                    + origin.getLineNumber() + ")";
+        } else {
+            errorMsg = e.getClass().getSimpleName();
+        }
+
+        return problemDetailResponseEntity(errorMsg, HttpStatus.INTERNAL_SERVER_ERROR);
     }
 }

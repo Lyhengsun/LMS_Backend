@@ -1,5 +1,6 @@
 package com.norton.lms_backend.service.impl;
 
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -23,6 +24,10 @@ public class AppUserServiceImpl implements AppUserService {
     private final AppUserRepository appUserRepository;
     private final RoleRepository roleRepository;
     private final PasswordEncoder passwordEncoder;
+
+    private AppUser getCurrentUser() {
+        return (AppUser) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+    }
 
     @Override
     public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException {
@@ -50,4 +55,8 @@ public class AppUserServiceImpl implements AppUserService {
         return appUserRepository.save(newUser).toResponse();
     }
 
+    @Override
+    public AppUserResponse getCurrentUserInfo() {
+        return getCurrentUser().toResponse();
+    }
 }
