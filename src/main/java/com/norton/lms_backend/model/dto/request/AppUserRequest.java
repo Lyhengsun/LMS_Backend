@@ -8,18 +8,30 @@ import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
-
+import jakarta.validation.constraints.*;
 @Getter
 @Setter
 @AllArgsConstructor
 @NoArgsConstructor
 @Builder
 public class AppUserRequest {
+    @NotBlank(message = "Full name is required")
+    @Size(max = 50, message = "Full name must not exceed 100 characters")
     private String fullName;
+
+    @NotBlank(message = "Email is required")
+    @Email(message = "Email must be valid")
     private String email;
+
+    @NotBlank(message = "Password is required")
+    @Size(min = 8, message = "Password must be at least 8 characters")
     private String password;
+
     private String avatarUrl;
+
     private String bio;
+
+    @NotNull(message = "Role ID is required")
     private Long roleId;
 
     public AppUser toEntity(Role role) {
