@@ -149,4 +149,45 @@ public class AuthServiceImpl implements AuthService {
         emailSenderService.sendEmail(appUser.getEmail(), otp);
         redisTemplate.opsForValue().set(appUser.getEmail(), otp, Duration.ofMinutes(5));
     }
+
+    @Override
+    public void forgotPassword(String email) {
+        AppUser appUser = appUserRepository.findByEmail(email).orElseThrow(() -> new BadRequestException("User is not registered"));
+        if (appUser == null) throw new NotFoundException("User doesn't exist");
+        String otp = new RandomOtp().generateOtp();
+
+        while (redisTemplate.opsForValue().get(otp) != null) {
+            otp = new RandomOtp().generateOtp();
+        }
+
+        emailSenderService.sendEmail(appUser.getEmail(), otp);
+        redisTemplate.opsForValue().set(appUser.getEmail(), otp, Duration.ofMinutes(5));
+    }
+
+    @Override
+    public void verifyForgot(String email, String otpCode) {
+        AppUser appUser = appUserRepository.findByEmail(email).orElseThrow(() -> new BadRequestException("User is not registered"));
+        if (appUser == null) throw new NotFoundException("User doesn't exist");
+        String storedOTP = redisTemplate.opsForValue().get(email);
+        if(storedOTP == null) throw new BadRequestException("OTP already expired");
+        if (!storedOTP.equals(otpCode)) throw new BadRequestException("OTP code doesn't match");
+    }
+
+    @Override
+    public AppUserResponse resetPassword(String email, String otpCode, String newPassword) {
+        AppUser appUser = appUserRepository.findByEmail(email).orElseThrow(() -> new BadRequestException("User is not registered"));
+        if (appUser == null) throw new NotFoundException("User doesn't exist");
+
+        String storedOTP = redisTemplate.opsForValue().get(email);
+        if(storedOTP == null) throw new BadRequestException("OTP already expired");
+        if (!storedOTP.equals(otpCode)) throw new BadRequestException("OTP code doesn't match");
+
+        redisTemplate.delete(otpCode);
+
+        String password = passwordEncoder.encode(newPassword);
+        appUser.setPassword(password);
+
+        return appUserRepository.save(appUser).toResponse();
+
+    }
 }

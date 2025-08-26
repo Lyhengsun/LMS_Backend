@@ -1,7 +1,9 @@
 package com.norton.lms_backend.controller;
 
+import com.norton.lms_backend.model.dto.request.ResetRequest;
 import com.norton.lms_backend.service.AuthService;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.validation.Valid;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.Positive;
 import lombok.SneakyThrows;
@@ -52,5 +54,25 @@ public class AuthController {
     public ResponseEntity<ApiResponse<Object>> resend(@Email @RequestParam String email) {
         authService.resend(email);
         return ResponseUtils.createResponse("OTP has successfully resent");
+    }
+
+    @PostMapping("/forgot")
+    @Operation(summary = "Send otp code to email")
+    public ResponseEntity<ApiResponse<Object>> verifyEmail(@Email @RequestParam String email) {
+        authService.forgotPassword(email);
+        return ResponseUtils.createResponse("Email verified");
+    }
+
+    @PostMapping("/forgot/verify")
+    @Operation(summary = "Verify otp in forgot password")
+    public ResponseEntity<ApiResponse<Object>> verifyForgot(@Email @RequestParam String email, @RequestParam String otp) {
+        authService.verifyForgot(email, otp);
+        return ResponseUtils.createResponse("Verify forgot password");
+    }
+
+    @PostMapping("/forgot/reset")
+    @Operation(summary = "Reset password otp in forgot password")
+    public ResponseEntity<ApiResponse<Object>> resetPassword(@Valid @RequestBody ResetRequest request) {
+        return ResponseUtils.createResponse("successful", authService.resetPassword(request.getEmail(), request.getOtp(), request.getPassword()));
     }
 }

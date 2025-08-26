@@ -14,4 +14,10 @@ public interface AuthService {
     void verify(String email, String optCode);
 
     void resend(String email) throws MessagingException;
+
+    void forgotPassword(String email);
+
+    void verifyForgot(String email, String otpCode);
+
+    AppUserResponse resetPassword(String email, String otpCode, String newPassword);
 }
