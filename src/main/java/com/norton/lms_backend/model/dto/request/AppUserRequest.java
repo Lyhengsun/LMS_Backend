@@ -30,6 +30,9 @@ public class AppUserRequest {
     private String avatarUrl;
 
     private String bio;
+
+    @NotBlank(message = "Phone number is required")
+    @Size(min = 9,max = 10, message = "Phone number must be at 9-10 characters")
     private String phoneNumber;
 
     @NotNull(message = "Role ID is required")

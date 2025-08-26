@@ -45,12 +45,13 @@ public class AuthServiceImpl implements AuthService {
 
     private void authenticate(String email, String password) {
         try {
-            AppUser appUser = appUserRepository.findByEmail(email).orElseThrow(() -> new NotFoundException("Invalid email"));
+            AppUser appUser = appUserRepository.findByEmail(email)
+                    .orElseThrow(() -> new NotFoundException("Invalid email"));
 
             if (!passwordEncoder.matches(password, appUser.getPassword())) {
                 throw new NotFoundException("Invalid Password");
             }
-            if(!appUser.getIsVerified()) {
+            if (!appUser.getIsVerified()) {
                 throw new BadRequestException("Your account is not verified");
             }
             authenticationManager.authenticate(new UsernamePasswordAuthenticationToken(email, password));
@@ -64,8 +65,10 @@ public class AuthServiceImpl implements AuthService {
 
     @Override
     public AuthResponse login(AuthRequest authRequest) throws Exception {
-        AppUser appUser = appUserRepository.findByEmail(authRequest.getEmail()).orElseThrow(() -> new BadRequestException("User is not registered"));
-        if(!appUser.getIsVerified()) throw new BadRequestException("User needs to verify before login");
+        AppUser appUser = appUserRepository.findByEmail(authRequest.getEmail())
+                .orElseThrow(() -> new BadRequestException("User is not registered"));
+        if (!appUser.getIsVerified())
+            throw new BadRequestException("User needs to verify before login");
 
         authenticate(authRequest.getEmail(), authRequest.getPassword());
         final UserDetails userDetails = appUserService.loadUserByUsername(authRequest.getEmail());
@@ -75,8 +78,23 @@ public class AuthServiceImpl implements AuthService {
 
     @Override
     public AppUserResponse register(AppUserRequest appUserRequest) throws MessagingException {
-        appUserRepository.findByEmail(appUserRequest.getEmail()).ifPresent((u) -> {throw new BadRequestException("User already exist");} );
-        Role role = roleRepository.findById(appUserRequest.getRoleId()).orElseThrow(() -> new BadRequestException("Role doesn't exist"));
+        AppUser foundUser = null;
+        var optionalUser = appUserRepository.findByEmail(appUserRequest.getEmail());
+        if (optionalUser.isPresent()) {
+            foundUser = optionalUser.get();
+        }
+
+        if (foundUser != null && foundUser.getIsVerified()) {
+            throw new BadRequestException("User already exist");
+        }
+
+        Role role = roleRepository.findById(appUserRequest.getRoleId())
+                .orElseThrow(() -> new BadRequestException("Role doesn't exist"));
+
+        if (role.getRoleName().equals("ROLE_ADMIN")) {
+            throw new BadRequestException("You can't register as an admin");
+        }
+
         AppUser appUser = appUserRequest.toEntity(role);
 
         appUser.setPassword(passwordEncoder.encode(appUserRequest.getPassword()));
@@ -89,17 +107,26 @@ public class AuthServiceImpl implements AuthService {
 
         emailSenderService.sendEmail(appUserRequest.getEmail(), otp);
         redisTemplate.opsForValue().set(appUser.getEmail(), otp, Duration.ofMinutes(2));
+
+        if (foundUser != null) {
+            appUserRepository.deleteById(foundUser.getId());
+            appUserRepository.flush();
+        }
         return appUserRepository.save(appUser).toResponse();
     }
 
     @Override
     public void verify(String email, String otpCode) {
-        AppUser appUser = appUserRepository.findByEmail(email).orElseThrow(() -> new BadRequestException("User is not registered"));
-        if (appUser.getIsVerified()) throw new BadRequestException("User already verified");
+        AppUser appUser = appUserRepository.findByEmail(email)
+                .orElseThrow(() -> new BadRequestException("User is not registered"));
+        if (appUser.getIsVerified())
+            throw new BadRequestException("User already verified");
 
         String storedOTP = redisTemplate.opsForValue().get(email);
-        if(storedOTP == null) throw new BadRequestException("OTP already expired");
-        if (!storedOTP.equals(otpCode)) throw new BadRequestException("OTP code doesn't match");
+        if (storedOTP == null)
+            throw new BadRequestException("OTP already expired");
+        if (!storedOTP.equals(otpCode))
+            throw new BadRequestException("OTP code doesn't match");
 
         redisTemplate.delete(otpCode);
         appUser.setIsVerified(true);
@@ -109,8 +136,10 @@ public class AuthServiceImpl implements AuthService {
     @SneakyThrows
     @Override
     public void resend(String email) {
-        AppUser appUser = appUserRepository.findByEmail(email).orElseThrow(() -> new BadRequestException("User is not registered"));
-        if(appUser.getIsVerified()) throw new BadRequestException("User already verified");
+        AppUser appUser = appUserRepository.findByEmail(email)
+                .orElseThrow(() -> new BadRequestException("User is not registered"));
+        if (appUser.getIsVerified())
+            throw new BadRequestException("User already verified");
         String otp = new RandomOtp().generateOtp();
 
         while (redisTemplate.opsForValue().get(otp) != null) {

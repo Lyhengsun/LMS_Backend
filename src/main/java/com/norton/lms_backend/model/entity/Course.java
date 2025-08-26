@@ -50,6 +50,9 @@ public class Course extends BaseEntity {
 
     @PrePersist
     private void prePersist() {
+        if (isPublic == null) {
+            isPublic = false;
+        }
         if (isDeleted == null) {
             isDeleted = false;
         }

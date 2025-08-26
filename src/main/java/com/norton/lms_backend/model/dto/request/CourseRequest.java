@@ -29,14 +29,8 @@ public class CourseRequest {
     @Min(value = 1, message = "Max points must be greater than 0")
     private Integer maxPoints;
 
-    @NotNull(message = "isPublic is required")
-    private Boolean isPublic;
-
     @NotNull(message = "Course category ID is required")
     private Long courseCategoryId;
-
-    @NotNull(message = "Author ID is required")
-    private Long authorId;
 
     public Course toEntity() {
         return Course.builder()
@@ -45,7 +39,6 @@ public class CourseRequest {
                 .courseDescription(this.courseDescription)
                 .level(this.level)
                 .maxPoints(this.maxPoints)
-                .isPublic(this.isPublic)
                 .build();
     }
 }

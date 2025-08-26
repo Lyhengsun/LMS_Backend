@@ -71,7 +71,6 @@ public class CourseServiceImpl implements CourseService {
         course.setCourseDescription(course.getCourseDescription());
         course.setLevel(courseRequest.getLevel());
         course.setMaxPoints(courseRequest.getMaxPoints());
-        course.setIsPublic(courseRequest.getIsPublic());
         return courseRepository.save(course).toResponse();
     }
 
