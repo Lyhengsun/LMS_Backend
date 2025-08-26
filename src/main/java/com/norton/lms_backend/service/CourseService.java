@@ -21,7 +21,7 @@ public interface CourseService {
 
     PagedResponse<CourseResponse> getCoursesByCategoryId(Long categoryId, Integer page, Integer size);
 
-    PagedResponse<CourseResponse> getCoursesByAuthorId(Long authorId, Integer page, Integer size);
+    PagedResponse<CourseResponse> getCoursesByAuthorId(Integer page, Integer size);
 
     CourseContentResponse createCourseContent(CourseContentRequest request);
 }

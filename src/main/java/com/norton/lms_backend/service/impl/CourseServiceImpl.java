@@ -11,7 +11,6 @@ import com.norton.lms_backend.model.entity.AppUser;
 import com.norton.lms_backend.model.entity.Category;
 import com.norton.lms_backend.model.entity.Course;
 import com.norton.lms_backend.model.entity.CourseContent;
-import com.norton.lms_backend.repository.AppUserRepository;
 import com.norton.lms_backend.repository.CategoryRepository;
 import com.norton.lms_backend.repository.CourseContentRepository;
 import com.norton.lms_backend.repository.CourseRepository;
@@ -20,6 +19,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 
 @Service
@@ -27,8 +27,11 @@ import org.springframework.stereotype.Service;
 public class CourseServiceImpl implements CourseService {
     private final CourseRepository courseRepository;
     private final CategoryRepository categoryRepository;
-    private final AppUserRepository appUserRepository;
     private final CourseContentRepository courseContentRepository;
+
+    private AppUser getCurrentUser() {
+        return (AppUser) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+    }
 
     private Course findCourseById(Long id) {
         return courseRepository.findById(id)
@@ -40,10 +43,8 @@ public class CourseServiceImpl implements CourseService {
         Course course = courseRequest.toEntity();
         Category category = categoryRepository.findById(courseRequest.getCourseCategoryId()).orElseThrow(
                 () -> new NotFoundException("Category with id " + courseRequest.getCourseCategoryId() + " not found"));
-        AppUser appUser = appUserRepository.findById(courseRequest.getAuthorId()).orElseThrow(
-                () -> new NotFoundException("Author with id " + courseRequest.getAuthorId() + " not found"));
         course.setCategory(category);
-        course.setAuthor(appUser);
+        course.setAuthor(getCurrentUser());
         return courseRepository.save(course).toResponse();
     }
 
@@ -93,11 +94,9 @@ public class CourseServiceImpl implements CourseService {
     }
 
     @Override
-    public PagedResponse<CourseResponse> getCoursesByAuthorId(Long authorId, Integer page, Integer size) {
+    public PagedResponse<CourseResponse> getCoursesByAuthorId(Integer page, Integer size) {
         Pageable pageable = PageRequest.of(page - 1, size);
-        AppUser appUser = appUserRepository.findById(authorId)
-                .orElseThrow(() -> new NotFoundException("Author with id " + authorId + " not found"));
-        Page<Course> courses = courseRepository.findCoursesByCategoryId(appUser.getId(), pageable);
+        Page<Course> courses = courseRepository.findCoursesByCategoryId(getCurrentUser().getId(), pageable);
         return PagedResponse.<CourseResponse>builder()
                 .items(courses.getContent().stream().map(Course::toResponse).toList())
                 .pagination(new PaginationInfo(courses))
