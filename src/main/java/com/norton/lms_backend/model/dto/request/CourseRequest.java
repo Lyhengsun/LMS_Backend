@@ -16,6 +16,9 @@ public class CourseRequest {
     @Size(max = 50, message = "Course name must not exceed 50 characters")
     private String courseName;
 
+    @NotBlank(message = "Course Image is required")
+    private String courseImageName;
+
     @NotBlank(message = "Course description is required")
     private String courseDescription;
 
@@ -38,6 +41,7 @@ public class CourseRequest {
     public Course toEntity() {
         return Course.builder()
                 .courseName(this.courseName)
+                .courseImageName(courseImageName)
                 .courseDescription(this.courseDescription)
                 .level(this.level)
                 .maxPoints(this.maxPoints)

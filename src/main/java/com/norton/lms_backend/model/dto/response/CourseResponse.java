@@ -1,5 +1,7 @@
 package com.norton.lms_backend.model.dto.response;
 
+import java.util.List;
+
 import com.norton.lms_backend.model.entity.AppUser;
 import com.norton.lms_backend.model.entity.Category;
 import com.norton.lms_backend.model.enumeration.Level;
@@ -17,8 +19,10 @@ import lombok.experimental.SuperBuilder;
 @AllArgsConstructor
 @NoArgsConstructor
 @SuperBuilder
-public class CourseResponse extends BaseEntityResponse{
+public class CourseResponse extends BaseEntityResponse {
     private String courseName;
+
+    private String courseImageName;
 
     private String courseDescription;
 
@@ -32,5 +36,7 @@ public class CourseResponse extends BaseEntityResponse{
 
     private Category category;
 
-    private AppUser author;
+    private AppUserResponse author;
+
+    private List<CourseContentResponse> contents;
 }

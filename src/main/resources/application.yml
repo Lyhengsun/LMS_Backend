@@ -49,6 +49,8 @@ minio:
   username: admin
   password: "@Password123!"
   put-object-part-size: 5242880
+  bucket:
+    name: common
 
 photon:
   streaming:

@@ -1,15 +1,19 @@
 package com.norton.lms_backend.service.impl;
 
 import com.norton.lms_backend.exception.NotFoundException;
+import com.norton.lms_backend.model.dto.request.CourseContentRequest;
 import com.norton.lms_backend.model.dto.request.CourseRequest;
+import com.norton.lms_backend.model.dto.response.CourseContentResponse;
 import com.norton.lms_backend.model.dto.response.CourseResponse;
 import com.norton.lms_backend.model.dto.response.PagedResponse;
 import com.norton.lms_backend.model.dto.response.PaginationInfo;
 import com.norton.lms_backend.model.entity.AppUser;
 import com.norton.lms_backend.model.entity.Category;
 import com.norton.lms_backend.model.entity.Course;
+import com.norton.lms_backend.model.entity.CourseContent;
 import com.norton.lms_backend.repository.AppUserRepository;
 import com.norton.lms_backend.repository.CategoryRepository;
+import com.norton.lms_backend.repository.CourseContentRepository;
 import com.norton.lms_backend.repository.CourseRepository;
 import com.norton.lms_backend.service.CourseService;
 import lombok.RequiredArgsConstructor;
@@ -24,16 +28,20 @@ public class CourseServiceImpl implements CourseService {
     private final CourseRepository courseRepository;
     private final CategoryRepository categoryRepository;
     private final AppUserRepository appUserRepository;
+    private final CourseContentRepository courseContentRepository;
 
     private Course findCourseById(Long id) {
-        return courseRepository.findById(id).orElseThrow(() -> new NotFoundException("Course with id "+ id + " not found"));
+        return courseRepository.findById(id)
+                .orElseThrow(() -> new NotFoundException("Course with id " + id + " not found"));
     }
 
     @Override
     public CourseResponse createCourse(CourseRequest courseRequest) {
         Course course = courseRequest.toEntity();
-        Category category = categoryRepository.findById(courseRequest.getCourseCategoryId()).orElseThrow(() -> new NotFoundException("Category with id "+courseRequest.getCourseCategoryId()+" not found"));
-        AppUser appUser = appUserRepository.findById(courseRequest.getAuthorId()).orElseThrow(() -> new NotFoundException("Author with id "+courseRequest.getAuthorId()+" not found"));
+        Category category = categoryRepository.findById(courseRequest.getCourseCategoryId()).orElseThrow(
+                () -> new NotFoundException("Category with id " + courseRequest.getCourseCategoryId() + " not found"));
+        AppUser appUser = appUserRepository.findById(courseRequest.getAuthorId()).orElseThrow(
+                () -> new NotFoundException("Author with id " + courseRequest.getAuthorId() + " not found"));
         course.setCategory(category);
         course.setAuthor(appUser);
         return courseRepository.save(course).toResponse();
@@ -41,12 +49,13 @@ public class CourseServiceImpl implements CourseService {
 
     @Override
     public CourseResponse getCourseById(Long id) {
-        return courseRepository.findById(id).orElseThrow(() -> new NotFoundException("Course with id "+ id + " not found")).toResponse();
+        return courseRepository.findById(id)
+                .orElseThrow(() -> new NotFoundException("Course with id " + id + " not found")).toResponse();
     }
 
     @Override
     public PagedResponse<CourseResponse> getAllCourses(Integer page, Integer size) {
-        Pageable pageable = PageRequest.of(page-1, size);
+        Pageable pageable = PageRequest.of(page - 1, size);
         Page<Course> courses = courseRepository.findAll(pageable);
         return PagedResponse.<CourseResponse>builder()
                 .items(courses.getContent().stream().map(Course::toResponse).toList())
@@ -73,8 +82,9 @@ public class CourseServiceImpl implements CourseService {
 
     @Override
     public PagedResponse<CourseResponse> getCoursesByCategoryId(Long categoryId, Integer page, Integer size) {
-        Pageable pageable = PageRequest.of(page-1, size);
-        Category category = categoryRepository.findById(categoryId).orElseThrow(() -> new NotFoundException("Category with id "+categoryId+" not found"));
+        Pageable pageable = PageRequest.of(page - 1, size);
+        Category category = categoryRepository.findById(categoryId)
+                .orElseThrow(() -> new NotFoundException("Category with id " + categoryId + " not found"));
         Page<Course> courses = courseRepository.findCoursesByCategoryId(category.getId(), pageable);
         return PagedResponse.<CourseResponse>builder()
                 .items(courses.getContent().stream().map(Course::toResponse).toList())
@@ -84,12 +94,23 @@ public class CourseServiceImpl implements CourseService {
 
     @Override
     public PagedResponse<CourseResponse> getCoursesByAuthorId(Long authorId, Integer page, Integer size) {
-        Pageable pageable = PageRequest.of(page-1, size);
-        AppUser appUser = appUserRepository.findById(authorId).orElseThrow(() -> new NotFoundException("Author with id "+authorId+" not found"));
+        Pageable pageable = PageRequest.of(page - 1, size);
+        AppUser appUser = appUserRepository.findById(authorId)
+                .orElseThrow(() -> new NotFoundException("Author with id " + authorId + " not found"));
         Page<Course> courses = courseRepository.findCoursesByCategoryId(appUser.getId(), pageable);
         return PagedResponse.<CourseResponse>builder()
                 .items(courses.getContent().stream().map(Course::toResponse).toList())
                 .pagination(new PaginationInfo(courses))
                 .build();
+    }
+
+    @Override
+    public CourseContentResponse createCourseContent(CourseContentRequest request) {
+        Course foundCourse = findCourseById(request.getCourseId());
+
+        CourseContent newCourseContent = request.toEntity();
+        newCourseContent.setCourse(foundCourse);
+
+        return courseContentRepository.save(newCourseContent).toResponse();
     }
 }

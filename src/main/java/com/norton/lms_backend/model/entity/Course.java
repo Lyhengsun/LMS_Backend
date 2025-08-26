@@ -1,5 +1,7 @@
 package com.norton.lms_backend.model.entity;
 
+import java.util.List;
+
 import com.norton.lms_backend.model.dto.response.CourseResponse;
 import com.norton.lms_backend.model.enumeration.Level;
 import jakarta.persistence.*;
@@ -16,6 +18,9 @@ public class Course extends BaseEntity {
 
     @Column(name = "course_name", nullable = false, length = 50)
     private String courseName;
+
+    @Column(name = "course_image_name", columnDefinition = "TEXT")
+    private String courseImageName;
 
     @Column(name = "course_description", nullable = false, columnDefinition = "TEXT")
     private String courseDescription;
@@ -40,6 +45,9 @@ public class Course extends BaseEntity {
     @JoinColumn(name = "author_id")
     private AppUser author;
 
+    @OneToMany(mappedBy = "course")
+    private List<CourseContent> contents;
+
     @PrePersist
     private void prePersist() {
         if (isDeleted == null) {
@@ -51,13 +59,15 @@ public class Course extends BaseEntity {
         return CourseResponse.builder()
                 .id(this.getId())
                 .courseName(this.courseName)
+                .courseImageName(this.courseImageName)
                 .courseDescription(this.courseDescription)
                 .level(this.level)
                 .maxPoints(this.maxPoints)
                 .isPublic(this.isPublic)
                 .isDeleted(this.isDeleted)
                 .category(this.category)
-                .author(this.author)
+                .author(this.author.toResponse())
+                .contents(this.contents.stream().map((c) -> c.toResponse()).toList())
                 .createdAt(this.getCreatedAt())
                 .editedAt(this.getEditedAt())
                 .build();
