@@ -98,7 +98,7 @@ public class CourseServiceImpl implements CourseService {
     @Override
     public PagedResponse<CourseResponse> getCoursesByAuthorId(Integer page, Integer size) {
         Pageable pageable = PageRequest.of(page - 1, size);
-        Page<Course> courses = courseRepository.findCoursesByCategoryId(getCurrentUser().getId(), pageable);
+        Page<Course> courses = courseRepository.findCoursesByAuthorId(getCurrentUser().getId(), pageable);
         return PagedResponse.<CourseResponse>builder()
                 .items(courses.getContent().stream().map(Course::toResponse).toList())
                 .pagination(new PaginationInfo(courses))

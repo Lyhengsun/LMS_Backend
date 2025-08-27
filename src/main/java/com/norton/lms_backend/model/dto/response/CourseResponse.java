@@ -4,6 +4,7 @@ import java.util.List;
 
 import com.norton.lms_backend.model.entity.AppUser;
 import com.norton.lms_backend.model.entity.Category;
+import com.norton.lms_backend.model.entity.CourseContent;
 import com.norton.lms_backend.model.enumeration.Level;
 import jakarta.persistence.Column;
 import jakarta.persistence.JoinColumn;
@@ -34,7 +35,12 @@ public class CourseResponse extends BaseEntityResponse {
 
     private Boolean isDeleted;
 
+    private Integer duration;
+
     private Category category;
 
     private AppUserResponse author;
+
+
+    private List<CourseContentResponse> contents;
 }

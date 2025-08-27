@@ -59,6 +59,16 @@ public class Course extends BaseEntity {
     }
 
     public CourseResponse toResponse() {
+        List<CourseContent> checkedContents = List.of();
+
+        Integer duration = 0;
+        if (contents != null) {
+            checkedContents = contents;
+            for (CourseContent courseContent : checkedContents) {
+                duration += courseContent.getDurationMinutes();
+            }
+        }
+
         return CourseResponse.builder()
                 .id(this.getId())
                 .courseName(this.courseName)
@@ -66,10 +76,12 @@ public class Course extends BaseEntity {
                 .courseDescription(this.courseDescription)
                 .level(this.level)
                 .maxPoints(this.maxPoints)
+                .duration(duration)
                 .isPublic(this.isPublic)
                 .isDeleted(this.isDeleted)
                 .category(this.category)
                 .author(this.author.toResponse())
+                .contents(checkedContents.stream().map((c) -> c.toResponse()).toList())
                 .createdAt(this.getCreatedAt())
                 .editedAt(this.getEditedAt())
                 .build();

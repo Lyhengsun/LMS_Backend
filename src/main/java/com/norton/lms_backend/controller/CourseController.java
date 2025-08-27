@@ -22,7 +22,7 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 
-@RequestMapping("/api/v1/instructors/course")
+@RequestMapping("/api/v1")
 @RequiredArgsConstructor
 @RestController
 @SecurityRequirement(name = "bearerAuth")
@@ -30,24 +30,33 @@ import org.springframework.web.bind.annotation.RequestBody;
 public class CourseController {
     private final CourseService courseService;
 
-    @GetMapping
+    @GetMapping("/course")
     public ResponseEntity<ApiResponse<PagedResponse<CourseResponse>>> getAllCourse(
             @RequestParam(defaultValue = "1") @Positive Integer page,
-            @RequestParam(defaultValue = "10") @Positive Integer size) {
+            @RequestParam(defaultValue = "10") @Positive Integer size
+            ) {
         return ResponseUtils.createResponse("Get all courses successfully", courseService.getAllCourses(page, size));
     }
 
-    @GetMapping("{course-id}")
+    @GetMapping("/instructors/course")
+    public ResponseEntity<ApiResponse<PagedResponse<CourseResponse>>> getCourseByAuthorId(
+            @RequestParam(defaultValue = "1") @Positive Integer page,
+            @RequestParam(defaultValue = "10") @Positive Integer size
+    ) {
+        return ResponseUtils.createResponse("Get all courses by author id successfully", courseService.getCoursesByAuthorId(page, size));
+    }
+
+    @GetMapping("/course/{course-id}")
     public ResponseEntity<ApiResponse<CourseResponse>> getCourseById(@PathVariable("course-id") Long id) {
         return ResponseUtils.createResponse("Get course by id successfully", courseService.getCourseById(id));
     }
 
-    @PostMapping
+    @PostMapping("/instructors/course")
     public ResponseEntity<ApiResponse<CourseResponse>> createCourse(@RequestBody CourseRequest request) {
         return ResponseUtils.createResponse("Create course successfully", courseService.createCourse(request));
     }
 
-    @PostMapping("/course-contents")
+    @PostMapping("/instructors/course/course-contents")
     public ResponseEntity<ApiResponse<CourseContentResponse>> createCourseContent(
             @RequestBody CourseContentRequest request) {
         return ResponseUtils.createResponse("Create a course content successfully", HttpStatus.CREATED,
