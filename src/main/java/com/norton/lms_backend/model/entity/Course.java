@@ -70,7 +70,6 @@ public class Course extends BaseEntity {
                 .isDeleted(this.isDeleted)
                 .category(this.category)
                 .author(this.author.toResponse())
-                .contents(this.contents.stream().map((c) -> c.toResponse()).toList())
                 .createdAt(this.getCreatedAt())
                 .editedAt(this.getEditedAt())
                 .build();

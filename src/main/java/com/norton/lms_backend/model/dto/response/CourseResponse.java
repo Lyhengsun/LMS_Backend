@@ -37,6 +37,4 @@ public class CourseResponse extends BaseEntityResponse {
     private Category category;
 
     private AppUserResponse author;
-
-    private List<CourseContentResponse> contents;
 }

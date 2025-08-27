@@ -8,10 +8,13 @@ import com.norton.lms_backend.model.dto.response.CourseResponse;
 import com.norton.lms_backend.model.dto.response.PagedResponse;
 import com.norton.lms_backend.service.CourseService;
 import com.norton.lms_backend.utils.ResponseUtils;
+
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.constraints.Positive;
 import lombok.RequiredArgsConstructor;
+
+import java.util.List;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -49,6 +52,13 @@ public class CourseController {
             @RequestBody CourseContentRequest request) {
         return ResponseUtils.createResponse("Create a course content successfully", HttpStatus.CREATED,
                 courseService.createCourseContent(request));
+    }
+
+    @GetMapping("/course-contents/{courseId}")
+    public ResponseEntity<ApiResponse<List<CourseContentResponse>>> getCourseContentByCourseId(
+            @PathVariable Long courseId) {
+        List<CourseContentResponse> response = courseService.getCourseContentsByCourseId(courseId);
+        return ResponseUtils.createResponse("Fetch course content by course Id successfully", response);
     }
 
 }

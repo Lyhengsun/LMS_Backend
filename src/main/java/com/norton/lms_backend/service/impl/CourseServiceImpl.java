@@ -16,6 +16,9 @@ import com.norton.lms_backend.repository.CourseContentRepository;
 import com.norton.lms_backend.repository.CourseRepository;
 import com.norton.lms_backend.service.CourseService;
 import lombok.RequiredArgsConstructor;
+
+import java.util.List;
+
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -110,5 +113,16 @@ public class CourseServiceImpl implements CourseService {
         newCourseContent.setCourse(foundCourse);
 
         return courseContentRepository.save(newCourseContent).toResponse();
+    }
+
+    @Override
+    public List<CourseContentResponse> getCourseContentsByCourseId(Long courseId) {
+        Course foundCourse = this.findCourseById(courseId);
+        List<CourseContent> courseContents = courseContentRepository.findByCourseOrderByCourseContentIndex(foundCourse);
+
+        if (courseContents.size() <= 0) {
+            return List.of();
+        }
+        return courseContents.stream().map((c) -> c.toResponse()).toList();
     }
 }

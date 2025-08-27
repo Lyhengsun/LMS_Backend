@@ -6,6 +6,9 @@ import com.norton.lms_backend.model.dto.response.CourseContentResponse;
 import com.norton.lms_backend.model.dto.response.CourseResponse;
 import com.norton.lms_backend.model.dto.response.PagedResponse;
 import com.norton.lms_backend.model.entity.Course;
+
+import java.util.List;
+
 import org.springframework.data.domain.Page;
 
 public interface CourseService {
@@ -24,4 +27,6 @@ public interface CourseService {
     PagedResponse<CourseResponse> getCoursesByAuthorId(Integer page, Integer size);
 
     CourseContentResponse createCourseContent(CourseContentRequest request);
+
+    List<CourseContentResponse> getCourseContentsByCourseId(Long courseId);
 }
