@@ -49,9 +49,12 @@ public class CourseController {
     @GetMapping("/instructors/course")
     public ResponseEntity<ApiResponse<PagedResponse<CourseResponse>>> getCourseByAuthorId(
             @RequestParam(defaultValue = "1") @Positive Integer page,
-            @RequestParam(defaultValue = "10") @Positive Integer size) {
+            @RequestParam(defaultValue = "10") @Positive Integer size,
+            @RequestParam(required = false) String name,
+            @RequestParam(defaultValue = "CREATED_AT") CourseProperty courseProperty,
+            @RequestParam(defaultValue = "ASC") Direction direction) {
         return ResponseUtils.createResponse("Get all courses by author id successfully",
-                courseService.getCoursesByAuthorId(page, size));
+                courseService.getCoursesByAuthorId(name, courseProperty, direction, page, size));
     }
 
     @GetMapping("/course/{course-id}")

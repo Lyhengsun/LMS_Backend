@@ -128,9 +128,17 @@ public class CourseServiceImpl implements CourseService {
     }
 
     @Override
-    public PagedResponse<CourseResponse> getCoursesByAuthorId(Integer page, Integer size) {
-        Pageable pageable = PageRequest.of(page - 1, size);
-        Page<Course> courses = courseRepository.findCoursesByAuthorId(getCurrentUser().getId(), pageable);
+    public PagedResponse<CourseResponse> getCoursesByAuthorId(String name, CourseProperty courseProperty,
+            Direction direction, Integer page, Integer size) {
+        Pageable pageable = PageRequest.of(page - 1, size, Sort.by(direction, courseProperty.getValue()));
+
+        Page<Course> courses = null;
+        if (name == null || name.isEmpty()) {
+            courses = courseRepository.searchByAuthorId(name, getCurrentUser().getId(), pageable);
+        } else {
+            courses = courseRepository.findByAuthorId(getCurrentUser().getId(), pageable);
+        }
+
         return PagedResponse.<CourseResponse>builder()
                 .items(courses.getContent().stream().map(Course::toResponse).toList())
                 .pagination(new PaginationInfo(courses))

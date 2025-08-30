@@ -30,5 +30,8 @@ public interface CourseRepository extends JpaRepository<Course, Long> {
     Page<Course> searchCoursesByCategoryIdAndLevel(Long categoryId, CourseLevel level, String name, Pageable pageable);
 
     @Query("Select c from Course c JOIN FETCH c.contents WHERE c.author.id = :authorId ")
-    Page<Course> findCoursesByAuthorId(Long authorId, Pageable pageable);
+    Page<Course> findByAuthorId(Long authorId, Pageable pageable);
+
+    @Query("Select c from Course c JOIN FETCH c.contents WHERE c.author.id = :authorId AND c.courseName ILIKE %:name% ")
+    Page<Course> searchByAuthorId(String name, Long authorId, Pageable pageable);
 }

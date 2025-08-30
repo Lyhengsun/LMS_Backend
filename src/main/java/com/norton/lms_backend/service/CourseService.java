@@ -17,7 +17,8 @@ public interface CourseService {
 
     CourseResponse getCourseById(Long id);
 
-    PagedResponse<CourseResponse> getAllCourses(String name, Long categoryId, CourseLevel level, CourseProperty courseProperty, Direction direction,
+    PagedResponse<CourseResponse> getAllCourses(String name, Long categoryId, CourseLevel level,
+            CourseProperty courseProperty, Direction direction,
             Integer page, Integer size);
 
     CourseResponse updateCourse(Long id, CourseRequest course);
@@ -26,7 +27,8 @@ public interface CourseService {
 
     PagedResponse<CourseResponse> getCoursesByCategoryId(Long categoryId, Integer page, Integer size);
 
-    PagedResponse<CourseResponse> getCoursesByAuthorId(Integer page, Integer size);
+    PagedResponse<CourseResponse> getCoursesByAuthorId(String name, CourseProperty courseProperty, Direction direction,
+            Integer page, Integer size);
 
     CourseContentResponse createCourseContent(CourseContentRequest request);
 
