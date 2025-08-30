@@ -1,5 +1,6 @@
 package com.norton.lms_backend.service.impl;
 
+import com.norton.lms_backend.exception.BadRequestException;
 import com.norton.lms_backend.exception.NotFoundException;
 import com.norton.lms_backend.model.dto.request.CourseContentRequest;
 import com.norton.lms_backend.model.dto.request.CourseRequest;
@@ -11,6 +12,8 @@ import com.norton.lms_backend.model.entity.AppUser;
 import com.norton.lms_backend.model.entity.Category;
 import com.norton.lms_backend.model.entity.Course;
 import com.norton.lms_backend.model.entity.CourseContent;
+import com.norton.lms_backend.model.enumeration.CourseLevel;
+import com.norton.lms_backend.model.enumeration.CourseProperty;
 import com.norton.lms_backend.repository.CategoryRepository;
 import com.norton.lms_backend.repository.CourseContentRepository;
 import com.norton.lms_backend.repository.CourseRepository;
@@ -22,6 +25,8 @@ import java.util.List;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
+import org.springframework.data.domain.Sort.Direction;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 
@@ -58,9 +63,36 @@ public class CourseServiceImpl implements CourseService {
     }
 
     @Override
-    public PagedResponse<CourseResponse> getAllCourses(Integer page, Integer size) {
-        Pageable pageable = PageRequest.of(page - 1, size);
-        Page<Course> courses = courseRepository.findAll(pageable);
+    public PagedResponse<CourseResponse> getAllCourses(String name, Long categoryId, CourseLevel level,
+            CourseProperty courseProperty,
+            Direction direction,
+            Integer page, Integer size) {
+        Pageable pageable = PageRequest.of(page - 1, size, Sort.by(direction, courseProperty.getValue()));
+
+        if (categoryId != null) {
+            categoryRepository.findById(categoryId)
+                    .orElseThrow(() -> new BadRequestException("Category with ID: " + categoryId + " doesn't exist"));
+        }
+
+        Page<Course> courses = null;
+        if ((name == null || name.isEmpty()) && categoryId == null && level == null) {
+            courses = courseRepository.findAll(pageable);
+        } else if (categoryId == null && level == null) {
+            courses = courseRepository.searchCourses(name, pageable);
+        } else if (categoryId == null && (name == null || name.isEmpty())) {
+            courses = courseRepository.findByLevel(level, pageable);
+        } else if ((name == null || name.isEmpty()) && level == null) {
+            courses = courseRepository.findByCategoryId(categoryId, pageable);
+        } else if ((name == null || name.isEmpty())) {
+            courses = courseRepository.findByCategoryIdAndLevel(categoryId, level, pageable);
+        } else if (level == null) {
+            courses = courseRepository.searchCoursesByCategoryId(categoryId, name, pageable);
+        } else if (categoryId == null) {
+            courses = courseRepository.searchCoursesByLevel(name, level, pageable);
+        } else {
+            courses = courseRepository.searchCoursesByCategoryIdAndLevel(categoryId, level, name, pageable);
+        }
+
         return PagedResponse.<CourseResponse>builder()
                 .items(courses.getContent().stream().map(Course::toResponse).toList())
                 .pagination(new PaginationInfo(courses))
@@ -88,7 +120,7 @@ public class CourseServiceImpl implements CourseService {
         Pageable pageable = PageRequest.of(page - 1, size);
         Category category = categoryRepository.findById(categoryId)
                 .orElseThrow(() -> new NotFoundException("Category with id " + categoryId + " not found"));
-        Page<Course> courses = courseRepository.findCoursesByCategoryId(category.getId(), pageable);
+        Page<Course> courses = courseRepository.findByCategoryId(category.getId(), pageable);
         return PagedResponse.<CourseResponse>builder()
                 .items(courses.getContent().stream().map(Course::toResponse).toList())
                 .pagination(new PaginationInfo(courses))

@@ -1,7 +1,7 @@
 package com.norton.lms_backend.model.dto.request;
 
 import com.norton.lms_backend.model.entity.Course;
-import com.norton.lms_backend.model.enumeration.Level;
+import com.norton.lms_backend.model.enumeration.CourseLevel;
 import lombok.*;
 import jakarta.validation.constraints.*;
 
@@ -23,7 +23,7 @@ public class CourseRequest {
     private String courseDescription;
 
     @NotNull(message = "Level is required")
-    private Level level;
+    private CourseLevel level;
 
     @NotNull(message = "Max points is required")
     @Min(value = 1, message = "Max points must be greater than 0")

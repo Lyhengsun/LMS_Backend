@@ -5,7 +5,7 @@ import lombok.RequiredArgsConstructor;
 
 @RequiredArgsConstructor
 @Getter
-public enum Level {
+public enum CourseLevel {
     BEGINNER("beginner"), INTERMEDIATE("intermediate"), ADVANCE("advance");
 
     private final String fieldName;

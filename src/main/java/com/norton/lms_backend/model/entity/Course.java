@@ -3,7 +3,7 @@ package com.norton.lms_backend.model.entity;
 import java.util.List;
 
 import com.norton.lms_backend.model.dto.response.CourseResponse;
-import com.norton.lms_backend.model.enumeration.Level;
+import com.norton.lms_backend.model.enumeration.CourseLevel;
 import jakarta.persistence.*;
 import lombok.*;
 
@@ -26,7 +26,7 @@ public class Course extends BaseEntity {
     private String courseDescription;
 
     @Column(name = "level", nullable = false, length = 20)
-    private Level level;
+    private CourseLevel level;
 
     @Column(name = "max_points", nullable = false)
     private Integer maxPoints;

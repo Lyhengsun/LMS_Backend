@@ -2,13 +2,8 @@ package com.norton.lms_backend.model.dto.response;
 
 import java.util.List;
 
-import com.norton.lms_backend.model.entity.AppUser;
 import com.norton.lms_backend.model.entity.Category;
-import com.norton.lms_backend.model.entity.CourseContent;
-import com.norton.lms_backend.model.enumeration.Level;
-import jakarta.persistence.Column;
-import jakarta.persistence.JoinColumn;
-import jakarta.persistence.ManyToOne;
+import com.norton.lms_backend.model.enumeration.CourseLevel;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -27,7 +22,7 @@ public class CourseResponse extends BaseEntityResponse {
 
     private String courseDescription;
 
-    private Level level;
+    private CourseLevel level;
 
     private Integer maxPoints;
 

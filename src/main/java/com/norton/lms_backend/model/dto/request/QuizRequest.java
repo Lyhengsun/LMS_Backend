@@ -1,6 +1,5 @@
 package com.norton.lms_backend.model.dto.request;
 
-import com.norton.lms_backend.model.entity.AppUser;
 import com.norton.lms_backend.model.entity.Quiz;
 import lombok.*;
 

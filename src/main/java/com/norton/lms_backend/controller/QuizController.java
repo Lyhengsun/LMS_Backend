@@ -4,7 +4,6 @@ import com.norton.lms_backend.model.dto.request.QuizRequest;
 import com.norton.lms_backend.model.dto.response.ApiResponse;
 import com.norton.lms_backend.model.dto.response.PagedResponse;
 import com.norton.lms_backend.model.dto.response.QuizResponse;
-import com.norton.lms_backend.model.entity.Quiz;
 import com.norton.lms_backend.service.QuizService;
 import com.norton.lms_backend.utils.ResponseUtils;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
