@@ -57,6 +57,11 @@ public class CourseController {
                 courseService.getCoursesByAuthorId(name, courseProperty, direction, page, size));
     }
 
+    @GetMapping("/instructors/course/{courseId}")
+    public ResponseEntity<ApiResponse<CourseResponse>> getCourseForAuthorByCourseId(@PathVariable Long courseId) {
+        return ResponseUtils.createResponse("Get course with ID: " + courseId + " for author successfully", courseService.getCourseByIdForAuthor(courseId));
+    }
+
     @GetMapping("/course/{course-id}")
     public ResponseEntity<ApiResponse<CourseResponse>> getCourseById(@PathVariable("course-id") Long id) {
         return ResponseUtils.createResponse("Get course by id successfully", courseService.getCourseById(id));

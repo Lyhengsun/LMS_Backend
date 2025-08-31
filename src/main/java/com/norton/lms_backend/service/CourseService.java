@@ -33,4 +33,6 @@ public interface CourseService {
     CourseContentResponse createCourseContent(CourseContentRequest request);
 
     List<CourseContentResponse> getCourseContentsByCourseId(Long courseId);
+
+    CourseResponse getCourseByIdForAuthor(Long courseId);
 }

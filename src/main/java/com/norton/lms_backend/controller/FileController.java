@@ -43,9 +43,9 @@ public class FileController {
     }
 
     @PostMapping(value = "/video/upload-file", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
-    public ResponseEntity<String> saveVideo(@RequestParam("file") MultipartFile file) {
-
-        return ResponseEntity.status(HttpStatus.CREATED).body(videoService.save(file).toString());
+    public ResponseEntity<ApiResponse<String>> saveVideo(@RequestParam("file") MultipartFile file) {
+        return ResponseUtils.createResponse("uploaded video successfully", HttpStatus.CREATED,
+                videoService.save(file).toString());
     }
 
     @CrossOrigin(origins = "http://localhost:3000", methods = { RequestMethod.GET, RequestMethod.POST })

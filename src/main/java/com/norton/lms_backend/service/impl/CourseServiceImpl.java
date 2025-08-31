@@ -17,6 +17,7 @@ import com.norton.lms_backend.model.enumeration.CourseProperty;
 import com.norton.lms_backend.repository.CategoryRepository;
 import com.norton.lms_backend.repository.CourseContentRepository;
 import com.norton.lms_backend.repository.CourseRepository;
+import com.norton.lms_backend.repository.specification.CourseSpecification;
 import com.norton.lms_backend.service.CourseService;
 import lombok.RequiredArgsConstructor;
 
@@ -27,6 +28,7 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.domain.Sort.Direction;
+import org.springframework.data.jpa.domain.Specification;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 
@@ -74,24 +76,22 @@ public class CourseServiceImpl implements CourseService {
                     .orElseThrow(() -> new BadRequestException("Category with ID: " + categoryId + " doesn't exist"));
         }
 
-        Page<Course> courses = null;
-        if ((name == null || name.isEmpty()) && categoryId == null && level == null) {
-            courses = courseRepository.findAll(pageable);
-        } else if (categoryId == null && level == null) {
-            courses = courseRepository.searchCourses(name, pageable);
-        } else if (categoryId == null && (name == null || name.isEmpty())) {
-            courses = courseRepository.findByLevel(level, pageable);
-        } else if ((name == null || name.isEmpty()) && level == null) {
-            courses = courseRepository.findByCategoryId(categoryId, pageable);
-        } else if ((name == null || name.isEmpty())) {
-            courses = courseRepository.findByCategoryIdAndLevel(categoryId, level, pageable);
-        } else if (level == null) {
-            courses = courseRepository.searchCoursesByCategoryId(categoryId, name, pageable);
-        } else if (categoryId == null) {
-            courses = courseRepository.searchCoursesByLevel(name, level, pageable);
-        } else {
-            courses = courseRepository.searchCoursesByCategoryIdAndLevel(categoryId, level, name, pageable);
+        Specification<Course> spec = Specification.unrestricted();
+        spec = spec.and(CourseSpecification.fetchContents());
+
+        if (name != null && !name.isEmpty()) {
+            spec = spec.and(CourseSpecification.courseNameContains(name));
         }
+
+        if (categoryId != null) {
+            spec = spec.and(CourseSpecification.hasCategoryId(categoryId));
+        }
+
+        if (level != null) {
+            spec = spec.and(CourseSpecification.hasLevel(level));
+        }
+
+        Page<Course> courses = courseRepository.findAll(spec, pageable);
 
         return PagedResponse.<CourseResponse>builder()
                 .items(courses.getContent().stream().map(Course::toResponse).toList())
@@ -132,12 +132,16 @@ public class CourseServiceImpl implements CourseService {
             Direction direction, Integer page, Integer size) {
         Pageable pageable = PageRequest.of(page - 1, size, Sort.by(direction, courseProperty.getValue()));
 
-        Page<Course> courses = null;
-        if (name == null || name.isEmpty()) {
-            courses = courseRepository.searchByAuthorId(name, getCurrentUser().getId(), pageable);
-        } else {
-            courses = courseRepository.findByAuthorId(getCurrentUser().getId(), pageable);
+        Specification<Course> spec = Specification.unrestricted();
+        spec = spec.and(CourseSpecification.fetchContents());
+        spec = spec.and(CourseSpecification.hasAuthorId(getCurrentUser().getId()));
+
+        if (name != null && !name.isEmpty()) {
+            spec = spec.and(CourseSpecification.courseNameContains(name));
         }
+
+        Page<Course> courses = courseRepository.findAll(spec, pageable);
+        ;
 
         return PagedResponse.<CourseResponse>builder()
                 .items(courses.getContent().stream().map(Course::toResponse).toList())
@@ -164,5 +168,13 @@ public class CourseServiceImpl implements CourseService {
             return List.of();
         }
         return courseContents.stream().map((c) -> c.toResponse()).toList();
+    }
+
+    @Override
+    public CourseResponse getCourseByIdForAuthor(Long courseId) {
+        Course foundCourse = courseRepository.findByAuthorIdAndCourseId(getCurrentUser().getId(), courseId)
+                .orElseThrow(() -> new NotFoundException("Course with ID: " + courseId + " doesn't exist"));
+
+        return foundCourse.toResponse();
     }
 }
