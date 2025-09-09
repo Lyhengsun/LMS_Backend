@@ -1,6 +1,7 @@
 package com.norton.lms_backend.model.dto.request;
 
 import com.norton.lms_backend.model.entity.Course;
+import com.norton.lms_backend.model.entity.CourseDraft;
 import com.norton.lms_backend.model.enumeration.CourseLevel;
 import lombok.*;
 import jakarta.validation.constraints.*;
@@ -39,6 +40,16 @@ public class CourseRequest {
                 .courseDescription(this.courseDescription)
                 .level(this.level)
                 .maxPoints(this.maxPoints)
+                .build();
+    }
+
+    public CourseDraft toEntityDraft() {
+        return CourseDraft.builder()
+                .courseName(courseName)
+                .courseImageName(courseImageName)
+                .courseDescription(courseDescription)
+                .level(level)
+                .maxPoints(maxPoints)
                 .build();
     }
 }

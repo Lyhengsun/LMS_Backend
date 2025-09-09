@@ -4,6 +4,7 @@ import com.norton.lms_backend.model.dto.request.CourseContentRequest;
 import com.norton.lms_backend.model.dto.request.CourseRequest;
 import com.norton.lms_backend.model.dto.response.ApiResponse;
 import com.norton.lms_backend.model.dto.response.CourseContentResponse;
+import com.norton.lms_backend.model.dto.response.CourseDraftResponse;
 import com.norton.lms_backend.model.dto.response.CourseResponse;
 import com.norton.lms_backend.model.dto.response.PagedResponse;
 import com.norton.lms_backend.model.enumeration.CourseProperty;
@@ -18,12 +19,11 @@ import lombok.RequiredArgsConstructor;
 
 import java.util.List;
 
+import org.apache.tomcat.util.http.ResponseUtil;
 import org.springframework.data.domain.Sort.Direction;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
 
 @RequestMapping("/api/v1")
 @RequiredArgsConstructor
@@ -47,7 +47,7 @@ public class CourseController {
     }
 
     @GetMapping("/instructors/course")
-    public ResponseEntity<ApiResponse<PagedResponse<CourseResponse>>> getCourseByAuthorId(
+    public ResponseEntity<ApiResponse<PagedResponse<CourseDraftResponse>>> getCourseByAuthorId(
             @RequestParam(defaultValue = "1") @Positive Integer page,
             @RequestParam(defaultValue = "10") @Positive Integer size,
             @RequestParam(required = false) String name,
@@ -58,8 +58,9 @@ public class CourseController {
     }
 
     @GetMapping("/instructors/course/{courseId}")
-    public ResponseEntity<ApiResponse<CourseResponse>> getCourseForAuthorByCourseId(@PathVariable Long courseId) {
-        return ResponseUtils.createResponse("Get course with ID: " + courseId + " for author successfully", courseService.getCourseByIdForAuthor(courseId));
+    public ResponseEntity<ApiResponse<CourseDraftResponse>> getCourseForAuthorByCourseId(@PathVariable Long courseId) {
+        return ResponseUtils.createResponse("Get course with ID: " + courseId + " for author successfully",
+                courseService.getCourseByIdForAuthor(courseId));
     }
 
     @GetMapping("/course/{course-id}")
@@ -68,7 +69,7 @@ public class CourseController {
     }
 
     @PostMapping("/instructors/course")
-    public ResponseEntity<ApiResponse<CourseResponse>> createCourse(@RequestBody CourseRequest request) {
+    public ResponseEntity<ApiResponse<CourseDraftResponse>> createCourse(@RequestBody CourseRequest request) {
         return ResponseUtils.createResponse("Create course successfully", courseService.createCourse(request));
     }
 
@@ -86,4 +87,28 @@ public class CourseController {
         return ResponseUtils.createResponse("Fetch course content by course Id successfully", response);
     }
 
+    @DeleteMapping("/instructors/course/{courseId}")
+    public ResponseEntity<ApiResponse<Void>> deleteCourseById(@PathVariable Long courseId) {
+        courseService.deleteCourse(courseId);
+        return ResponseUtils.createResponse("Delete Course successfully");
+    }
+
+    @PatchMapping("/admins/courses/approval/{courseId}")
+    public ResponseEntity<ApiResponse<CourseResponse>> approveCourseById(@PathVariable Long courseId) {
+        return ResponseUtils.createResponse("Approve with ID: " + courseId + " successfully",
+                courseService.approveCourseById(courseId));
+    }
+
+    @GetMapping("/admins/courses/unapproved")
+    public ResponseEntity<ApiResponse<PagedResponse<CourseDraftResponse>>> getUnapprovedCourse(
+            @RequestParam(defaultValue = "1") @Positive Integer page,
+            @RequestParam(defaultValue = "10") @Positive Integer size
+    ) {
+        return ResponseUtils.createResponse("Fetch unapproved course successfully", courseService.getUnapprovedCourse(page, size));
+    }
+
+    @PostMapping("/students/courses/{courseId}/joining")
+    public ResponseEntity<ApiResponse<CourseResponse>> joinCourse(@PathVariable Long courseId) {
+        return ResponseUtils.createResponse("Join a course with ID: " + courseId + " successfully", courseService.joinCourse(courseId));
+    }
 }

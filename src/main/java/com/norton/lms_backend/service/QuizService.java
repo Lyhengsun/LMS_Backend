@@ -1,11 +1,17 @@
 package com.norton.lms_backend.service;
 
+import com.norton.lms_backend.model.dto.request.AnswerRequest;
+import com.norton.lms_backend.model.dto.request.QuestionRequest;
 import com.norton.lms_backend.model.dto.request.QuizRequest;
+import com.norton.lms_backend.model.dto.response.AnswerResponse;
+import com.norton.lms_backend.model.dto.response.AnswerStudentResponse;
 import com.norton.lms_backend.model.dto.response.PagedResponse;
+import com.norton.lms_backend.model.dto.response.QuestionResponse;
 import com.norton.lms_backend.model.dto.response.QuizResponse;
-import jakarta.validation.constraints.Positive;
+import com.norton.lms_backend.model.dto.response.QuizStudentResponse;
+import com.norton.lms_backend.model.dto.response.TakeQuizResponse;
 
-import java.util.List;
+import jakarta.validation.constraints.Positive;
 
 public interface QuizService {
     /**
@@ -52,4 +58,14 @@ public interface QuizService {
     PagedResponse<QuizResponse> getAllQuizzesByAuthorId(Long id, @Positive Integer page, @Positive Integer size);
 
     QuizResponse getAllQuizzesByAuthorIdAndQuizId(Long authorId, Long quizId);
+
+    QuestionResponse createQuestion(Long quizId, QuestionRequest request);
+
+    AnswerResponse createAnswer(Long questionId, AnswerRequest request);
+
+    AnswerStudentResponse chooseAnswer(Long takeQuizId, Long answerId);
+
+    TakeQuizResponse studentTakeQuiz(Long quizId);
+
+    void submitTakenQuiz(Long takeQuizId);
 }

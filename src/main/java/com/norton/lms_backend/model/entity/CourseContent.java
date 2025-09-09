@@ -26,9 +26,13 @@ public class CourseContent extends BaseEntity {
     @Column(name = "duration_minutes", nullable = false)
     private Integer durationMinutes;
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "course_id", nullable = false)
+    @ManyToOne(fetch = FetchType.EAGER)
+    @JoinColumn(name = "course_id", nullable = true)
     private Course course;
+
+    @ManyToOne
+    @JoinColumn(name = "course_draft_id", nullable = true)
+    private CourseDraft courseDraft;
 
     public CourseContentResponse toResponse() {
         return CourseContentResponse.builder().id(getId()).courseContentName(courseContentName)

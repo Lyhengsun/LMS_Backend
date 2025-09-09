@@ -1,7 +1,5 @@
 package com.norton.lms_backend.model.dto.response;
 
-import java.util.List;
-
 import com.norton.lms_backend.model.entity.Category;
 import com.norton.lms_backend.model.enumeration.CourseLevel;
 
@@ -16,7 +14,7 @@ import lombok.experimental.SuperBuilder;
 @AllArgsConstructor
 @NoArgsConstructor
 @SuperBuilder
-public class QuizResponse extends BaseEntityResponse {
+public class QuizNoQuestionResponse extends BaseEntityResponse {
     private String quizName;
     private String quizDescription;
     private String quizInstruction;
@@ -26,5 +24,4 @@ public class QuizResponse extends BaseEntityResponse {
     private Integer passingScore;
     private AppUserResponse author;
     private Category category;
-    private List<QuestionResponse> questions;
 }

@@ -16,15 +16,26 @@ import lombok.experimental.SuperBuilder;
 @AllArgsConstructor
 @NoArgsConstructor
 @SuperBuilder
-public class QuizResponse extends BaseEntityResponse {
-    private String quizName;
-    private String quizDescription;
-    private String quizInstruction;
+public class CourseDraftResponse extends BaseEntityResponse {
+    private String courseName;
+
+    private String courseImageName;
+
+    private String courseDescription;
+
     private CourseLevel level;
-    private Integer durationMinutes;
-    private Integer maxAttempts;
-    private Integer passingScore;
-    private AppUserResponse author;
+
+    private Integer maxPoints;
+
+    private Boolean isApproved;
+
+    private Boolean isRejected;
+
+    private Integer duration;
+
     private Category category;
-    private List<QuestionResponse> questions;
+
+    private AppUserResponse author;
+
+    private List<CourseContentResponse> contents;
 }

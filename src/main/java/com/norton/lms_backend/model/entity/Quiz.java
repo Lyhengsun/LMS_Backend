@@ -1,6 +1,12 @@
 package com.norton.lms_backend.model.entity;
 
+import com.norton.lms_backend.model.dto.response.QuestionResponse;
+import com.norton.lms_backend.model.dto.response.QuestionStudentResponse;
+import com.norton.lms_backend.model.dto.response.QuizNoQuestionResponse;
 import com.norton.lms_backend.model.dto.response.QuizResponse;
+import com.norton.lms_backend.model.dto.response.QuizStudentResponse;
+import com.norton.lms_backend.model.enumeration.CourseLevel;
+
 import jakarta.persistence.Entity;
 import jakarta.persistence.Table;
 import lombok.*;
@@ -26,13 +32,16 @@ public class Quiz extends BaseEntity {
     private String quizInstruction;
 
     @Column(name = "level", nullable = false, length = 20)
-    private String level;
+    private CourseLevel level;
 
     @Column(name = "duration_minutes", nullable = false)
     private Integer durationMinutes;
 
     @Column(name = "max_attempts", nullable = false)
     private Integer maxAttempts;
+
+    @Column(name = "max_score", nullable = false)
+    private Integer maxScore;
 
     @Column(name = "passing_score", nullable = false)
     private Integer passingScore;
@@ -50,14 +59,24 @@ public class Quiz extends BaseEntity {
 
     @PrePersist
     private void prePersist() {
-        if (durationMinutes == null) durationMinutes = 0;
-        if (maxAttempts == null) maxAttempts = 0;
-        if (passingScore == null) passingScore = 0;
+        if (durationMinutes == null)
+            durationMinutes = 0;
+        if (maxAttempts == null)
+            maxAttempts = 0;
+        if (passingScore == null)
+            passingScore = 0;
+        if (maxScore == null)
+            maxScore = 0;
     }
 
     public QuizResponse toResponse() {
+        List<QuestionResponse> questionResponses = List.of();
+        if (questions != null && questions.size() > 0) {
+            questionResponses = questions.stream().map(q -> q.toResponse()).toList();
+        }
+
         return QuizResponse.builder()
-                .quizId(this.getId()) // from BaseEntity
+                .id(this.getId()) // from BaseEntity
                 .quizName(this.quizName)
                 .quizDescription(this.quizDescription)
                 .quizInstruction(this.quizInstruction)
@@ -65,7 +84,51 @@ public class Quiz extends BaseEntity {
                 .durationMinutes(this.durationMinutes)
                 .maxAttempts(this.maxAttempts)
                 .passingScore(this.passingScore)
+                .author(author.toResponse())
+                .category(category)
+                .questions(questionResponses)
+                .createdAt(getCreatedAt())
+                .editedAt(getEditedAt())
                 .build();
     }
 
+    public QuizStudentResponse toStudentResponse() {
+        List<QuestionStudentResponse> questionResponses = List.of();
+        if (questions != null && questions.size() > 0) {
+            questionResponses = questions.stream().map(q -> q.toStudentResponse()).toList();
+        }
+
+        return QuizStudentResponse.builder()
+                .id(this.getId()) // from BaseEntity
+                .quizName(this.quizName)
+                .quizDescription(this.quizDescription)
+                .quizInstruction(this.quizInstruction)
+                .level(this.level)
+                .durationMinutes(this.durationMinutes)
+                .maxAttempts(this.maxAttempts)
+                .passingScore(this.passingScore)
+                .author(author.toResponse())
+                .category(category)
+                .questions(questionResponses)
+                .createdAt(getCreatedAt())
+                .editedAt(getEditedAt())
+                .build();
+    }
+
+    public QuizNoQuestionResponse toNoQuestionResponse() {
+        return QuizNoQuestionResponse.builder()
+                .id(this.getId()) // from BaseEntity
+                .quizName(this.quizName)
+                .quizDescription(this.quizDescription)
+                .quizInstruction(this.quizInstruction)
+                .level(this.level)
+                .durationMinutes(this.durationMinutes)
+                .maxAttempts(this.maxAttempts)
+                .passingScore(this.passingScore)
+                .author(author.toResponse())
+                .category(category)
+                .createdAt(getCreatedAt())
+                .editedAt(getEditedAt())
+                .build();
+    }
 }

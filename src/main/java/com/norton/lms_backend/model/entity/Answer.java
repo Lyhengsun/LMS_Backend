@@ -1,5 +1,8 @@
 package com.norton.lms_backend.model.entity;
 
+import com.norton.lms_backend.model.dto.response.AnswerResponse;
+import com.norton.lms_backend.model.dto.response.AnswerStudentResponse;
+
 import jakarta.persistence.*;
 import lombok.*;
 
@@ -21,4 +24,23 @@ public class Answer extends BaseEntity {
     @ManyToOne
     @JoinColumn(name = "question_id", nullable = false)
     private Question question;
+
+    public AnswerResponse toResponse() {
+        return AnswerResponse.builder()
+                .id(getId())
+                .content(content)
+                .isCorrect(isCorrect)
+                .createdAt(getCreatedAt())
+                .editedAt(getEditedAt())
+                .build();
+    }
+
+    public AnswerStudentResponse toStudentResponse() {
+        return AnswerStudentResponse.builder()
+                .id(getId())
+                .content(content)
+                .createdAt(getCreatedAt())
+                .editedAt(getEditedAt())
+                .build();
+    }
 }

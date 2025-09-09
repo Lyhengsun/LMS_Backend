@@ -15,7 +15,6 @@ import lombok.*;
 @NoArgsConstructor
 @Builder
 public class Course extends BaseEntity {
-
     @Column(name = "course_name", nullable = false, length = 50)
     private String courseName;
 
@@ -45,18 +44,22 @@ public class Course extends BaseEntity {
     @JoinColumn(name = "author_id")
     private AppUser author;
 
-    @OneToMany(mappedBy = "course")
+    @OneToMany(mappedBy = "course", cascade = CascadeType.REMOVE)
     private List<CourseContent> contents;
 
     @PrePersist
     private void prePersist() {
         if (isPublic == null) {
-            isPublic = false;
+            isPublic = true;
         }
         if (isDeleted == null) {
             isDeleted = false;
         }
     }
+
+    @OneToOne
+    @JoinColumn(name = "course_draft_id", referencedColumnName = "id", nullable = true)
+    private CourseDraft courseDraft;
 
     public CourseResponse toResponse() {
         List<CourseContent> checkedContents = List.of();

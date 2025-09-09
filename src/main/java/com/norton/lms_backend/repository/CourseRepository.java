@@ -1,6 +1,7 @@
 package com.norton.lms_backend.repository;
 
 import com.norton.lms_backend.model.entity.Course;
+import com.norton.lms_backend.model.entity.CourseDraft;
 import com.norton.lms_backend.model.enumeration.CourseLevel;
 
 import java.util.Optional;
@@ -11,6 +12,8 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.stereotype.Repository;
+import java.util.List;
+
 
 @Repository
 public interface CourseRepository extends JpaRepository<Course, Long>, JpaSpecificationExecutor<Course> {
@@ -19,6 +22,8 @@ public interface CourseRepository extends JpaRepository<Course, Long>, JpaSpecif
     Page<Course> findByLevel(CourseLevel level, Pageable pageable);
 
     Page<Course> findByCategoryIdAndLevel(Long categoryId, CourseLevel level, Pageable pageable);
+
+    Course findByCourseDraft(CourseDraft courseDraft);
 
     @Query("SELECT c FROM Course c JOIN FETCH c.contents WHERE c.courseName ILIKE %:name%")
     Page<Course> searchCourses(String name, Pageable pageable);
