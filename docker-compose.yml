@@ -62,10 +62,18 @@ services:
       SPRING_DATASOURCE_URL: jdbc:postgresql://lms-backend-db-container:5432/postgres
       SPRING_DATASOURCE_USERNAME: postgres
       SPRING_DATASOURCE_PASSWORD: 2003
+      MINIO_URL: http://minio-edu:9000
+      MINIO_USERNAME: admin
+      MINIO_PASSWORD: "@Password123!"
+      MINIO_BUCKET_NAME: common
+      SPRING_DATA_REDIS_HOST: redis-edu
+      SPRING_DATA_REDIS_PORT: 6379
     ports:
-      - 8080:8090
+      - 8081:8090
     depends_on:
       - db
+      - storage
+      - redis
     networks:
       - lms_backend_network
 
