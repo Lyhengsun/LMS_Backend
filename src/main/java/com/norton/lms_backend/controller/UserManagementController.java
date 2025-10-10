@@ -62,7 +62,7 @@ public class UserManagementController {
     }
 
     @PatchMapping("update-user/{user-id}/approve")
-    public ResponseEntity<ApiResponse<Object>> updateApproveUser(@PathVariable("user-id") Long id) {
+    public ResponseEntity<ApiResponse<Void>> updateApproveUser(@PathVariable("user-id") Long id) {
         userManagementService.updateApproveUser(id);
         return ResponseUtils.createResponse("Approve user with id " + id + " successfully");
     }

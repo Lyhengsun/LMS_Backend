@@ -4,6 +4,7 @@ import com.norton.lms_backend.model.dto.request.CourseContentRequest;
 import com.norton.lms_backend.model.dto.request.CourseRequest;
 import com.norton.lms_backend.model.dto.response.CourseContentResponse;
 import com.norton.lms_backend.model.dto.response.CourseDraftResponse;
+import com.norton.lms_backend.model.dto.response.CourseProgressResponse;
 import com.norton.lms_backend.model.dto.response.CourseResponse;
 import com.norton.lms_backend.model.dto.response.PagedResponse;
 import com.norton.lms_backend.model.enumeration.CourseProperty;
@@ -43,7 +44,17 @@ public interface CourseService {
 
     CourseResponse approveCourseById(Long courseId);
 
-    PagedResponse<CourseDraftResponse> getUnapprovedCourse(Integer page, Integer size);
+    PagedResponse<CourseDraftResponse> getCourseForAdmin(Integer page, Integer size, String name, Boolean isApproved, Boolean isRejected);
 
     CourseResponse joinCourse(Long courseId);
+
+    CourseContentResponse completeCourseContent(Long courseContentId);
+
+    CourseProgressResponse getCourseProgressByCourseId(Long courseId);
+
+    void deleteCourseContentById(Long courseContentId);
+
+    CourseDraftResponse getCourseForAdminById(Long courseDraftId);
+
+    CourseDraftResponse submitCourseDraft(Long courseDraftId);
 }

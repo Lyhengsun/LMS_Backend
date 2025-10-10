@@ -21,8 +21,12 @@ public class CourseDraftSpecification {
         return (root, query, criteriaBuilder) -> criteriaBuilder.equal(root.get("level"), level);
     }
 
-    public static Specification<CourseDraft> isPublic(Boolean isPublic) {
-        return (root, query, criteriaBuilder) -> criteriaBuilder.equal(root.get("isPublic"), isPublic);
+    public static Specification<CourseDraft> isApproved(Boolean isApproved) {
+        return (root, query, criteriaBuilder) -> criteriaBuilder.equal(root.get("isApproved"), isApproved);
+    }
+
+    public static Specification<CourseDraft> isRejected(Boolean isRejected) {
+        return (root, query, criteriaBuilder) -> criteriaBuilder.equal(root.get("isRejected"), isRejected);
     }
 
     public static Specification<CourseDraft> hasAuthorId(Long authorId) {

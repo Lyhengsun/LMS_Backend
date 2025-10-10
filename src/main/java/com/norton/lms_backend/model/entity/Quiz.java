@@ -4,7 +4,9 @@ import com.norton.lms_backend.model.dto.response.QuestionResponse;
 import com.norton.lms_backend.model.dto.response.QuestionStudentResponse;
 import com.norton.lms_backend.model.dto.response.QuizNoQuestionResponse;
 import com.norton.lms_backend.model.dto.response.QuizResponse;
+import com.norton.lms_backend.model.dto.response.QuizStudentAnswerResponse;
 import com.norton.lms_backend.model.dto.response.QuizStudentResponse;
+import com.norton.lms_backend.model.dto.response.UserAnswerResponse;
 import com.norton.lms_backend.model.enumeration.CourseLevel;
 
 import jakarta.persistence.Entity;
@@ -13,6 +15,7 @@ import lombok.*;
 
 import jakarta.persistence.*;
 import java.util.List;
+import java.util.stream.Collectors;
 
 @Getter
 @Setter
@@ -40,12 +43,6 @@ public class Quiz extends BaseEntity {
     @Column(name = "max_attempts", nullable = false)
     private Integer maxAttempts;
 
-    @Column(name = "max_score", nullable = false)
-    private Integer maxScore;
-
-    @Column(name = "passing_score", nullable = false)
-    private Integer passingScore;
-
     @ManyToOne
     @JoinColumn(name = "author_id", nullable = false)
     private AppUser author;
@@ -63,16 +60,20 @@ public class Quiz extends BaseEntity {
             durationMinutes = 0;
         if (maxAttempts == null)
             maxAttempts = 0;
-        if (passingScore == null)
-            passingScore = 0;
-        if (maxScore == null)
-            maxScore = 0;
     }
 
     public QuizResponse toResponse() {
         List<QuestionResponse> questionResponses = List.of();
+        Integer maxScore = 0;
+
         if (questions != null && questions.size() > 0) {
-            questionResponses = questions.stream().map(q -> q.toResponse()).toList();
+            questionResponses = questions.stream().map(q -> {
+                return q.toResponse();
+            }).toList();
+
+            maxScore = questions.stream()
+                    .mapToInt(Question::getScore)
+                    .sum();
         }
 
         return QuizResponse.builder()
@@ -83,7 +84,7 @@ public class Quiz extends BaseEntity {
                 .level(this.level)
                 .durationMinutes(this.durationMinutes)
                 .maxAttempts(this.maxAttempts)
-                .passingScore(this.passingScore)
+                .maxScore(maxScore)
                 .author(author.toResponse())
                 .category(category)
                 .questions(questionResponses)
@@ -94,8 +95,14 @@ public class Quiz extends BaseEntity {
 
     public QuizStudentResponse toStudentResponse() {
         List<QuestionStudentResponse> questionResponses = List.of();
+        Integer maxScore = 0;
+
         if (questions != null && questions.size() > 0) {
             questionResponses = questions.stream().map(q -> q.toStudentResponse()).toList();
+
+            maxScore = questions.stream()
+                    .mapToInt(Question::getScore)
+                    .sum();
         }
 
         return QuizStudentResponse.builder()
@@ -105,8 +112,8 @@ public class Quiz extends BaseEntity {
                 .quizInstruction(this.quizInstruction)
                 .level(this.level)
                 .durationMinutes(this.durationMinutes)
-                .maxAttempts(this.maxAttempts)
-                .passingScore(this.passingScore)
+                .maxAttempts(maxAttempts)
+                .maxScore(maxScore)
                 .author(author.toResponse())
                 .category(category)
                 .questions(questionResponses)
@@ -116,6 +123,13 @@ public class Quiz extends BaseEntity {
     }
 
     public QuizNoQuestionResponse toNoQuestionResponse() {
+        Integer maxScore = 0;
+
+        if (questions != null && questions.size() > 0) {
+            maxScore = questions.stream()
+                    .mapToInt(Question::getScore)
+                    .sum();
+        }
         return QuizNoQuestionResponse.builder()
                 .id(this.getId()) // from BaseEntity
                 .quizName(this.quizName)
@@ -124,9 +138,35 @@ public class Quiz extends BaseEntity {
                 .level(this.level)
                 .durationMinutes(this.durationMinutes)
                 .maxAttempts(this.maxAttempts)
-                .passingScore(this.passingScore)
+                .maxScore(maxScore)
                 .author(author.toResponse())
                 .category(category)
+                .questionCount(questions.size())
+                .createdAt(getCreatedAt())
+                .editedAt(getEditedAt())
+                .build();
+    }
+
+    public QuizStudentAnswerResponse toStudentAnswerResponse(TakeQuiz takeQuiz) {
+        int maxScore = 0;
+        if (questions != null && !questions.isEmpty()) {
+            maxScore = questions.stream()
+                    .mapToInt(Question::getScore)
+                    .sum();
+        }
+
+        return QuizStudentAnswerResponse.builder()
+                .id(this.getId()) // from BaseEntity
+                .quizName(this.quizName)
+                .quizDescription(this.quizDescription)
+                .quizInstruction(this.quizInstruction)
+                .level(this.level)
+                .durationMinutes(this.durationMinutes)
+                .maxAttempts(this.maxAttempts)
+                .maxScore(maxScore)
+                .author(author.toResponse())
+                .category(category)
+                .answers(takeQuiz.getUserAnswer().stream().map(UserAnswer::toResponse).toList())
                 .createdAt(getCreatedAt())
                 .editedAt(getEditedAt())
                 .build();

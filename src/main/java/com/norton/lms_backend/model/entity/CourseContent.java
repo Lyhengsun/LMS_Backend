@@ -1,5 +1,6 @@
 package com.norton.lms_backend.model.entity;
 
+import com.norton.lms_backend.model.dto.response.CourseContentProgressResponse;
 import com.norton.lms_backend.model.dto.response.CourseContentResponse;
 
 import jakarta.persistence.*;
@@ -26,6 +27,9 @@ public class CourseContent extends BaseEntity {
     @Column(name = "duration_minutes", nullable = false)
     private Integer durationMinutes;
 
+    @Column(name = "points", nullable = true)
+    private Integer points;
+
     @ManyToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "course_id", nullable = true)
     private Course course;
@@ -35,8 +39,27 @@ public class CourseContent extends BaseEntity {
     private CourseDraft courseDraft;
 
     public CourseContentResponse toResponse() {
-        return CourseContentResponse.builder().id(getId()).courseContentName(courseContentName)
-                .courseContentIndex(courseContentIndex).videoFileName(videoFileName).durationMinutes(durationMinutes)
-                .createdAt(getCreatedAt()).editedAt(getEditedAt()).build();
+        return CourseContentResponse.builder()
+                .id(getId())
+                .courseContentName(courseContentName)
+                .courseContentIndex(courseContentIndex)
+                .videoFileName(videoFileName)
+                .durationMinutes(durationMinutes)
+                .points(points)
+                .createdAt(getCreatedAt())
+                .editedAt(getEditedAt()).build();
+    }
+
+    public CourseContentProgressResponse toProgressResponse(Boolean completed) {
+        return CourseContentProgressResponse.builder()
+                .id(getId())
+                .courseContentName(courseContentName)
+                .courseContentIndex(courseContentIndex)
+                .videoFileName(videoFileName)
+                .durationMinutes(durationMinutes)
+                .points(points)
+                .completed(completed)
+                .createdAt(getCreatedAt())
+                .editedAt(getEditedAt()).build();
     }
 }

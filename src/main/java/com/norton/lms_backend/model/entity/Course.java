@@ -2,6 +2,7 @@ package com.norton.lms_backend.model.entity;
 
 import java.util.List;
 
+import com.norton.lms_backend.model.dto.response.CourseNoContentResponse;
 import com.norton.lms_backend.model.dto.response.CourseResponse;
 import com.norton.lms_backend.model.enumeration.CourseLevel;
 import jakarta.persistence.*;
@@ -26,9 +27,6 @@ public class Course extends BaseEntity {
 
     @Column(name = "level", nullable = false, length = 20)
     private CourseLevel level;
-
-    @Column(name = "max_points", nullable = false)
-    private Integer maxPoints;
 
     @Column(name = "is_public", nullable = false)
     private Boolean isPublic;
@@ -65,10 +63,12 @@ public class Course extends BaseEntity {
         List<CourseContent> checkedContents = List.of();
 
         Integer duration = 0;
+        Integer maxPoints = 0;
         if (contents != null) {
             checkedContents = contents;
             for (CourseContent courseContent : checkedContents) {
                 duration += courseContent.getDurationMinutes();
+                maxPoints += courseContent.getPoints();
             }
         }
 
@@ -78,13 +78,44 @@ public class Course extends BaseEntity {
                 .courseImageName(this.courseImageName)
                 .courseDescription(this.courseDescription)
                 .level(this.level)
-                .maxPoints(this.maxPoints)
+                .maxPoints(maxPoints)
                 .duration(duration)
                 .isPublic(this.isPublic)
                 .isDeleted(this.isDeleted)
                 .category(this.category)
                 .author(this.author.toResponse())
                 .contents(checkedContents.stream().map((c) -> c.toResponse()).toList())
+                .createdAt(this.getCreatedAt())
+                .editedAt(this.getEditedAt())
+                .build();
+    }
+
+    public CourseNoContentResponse toNoContentResponse() {
+        List<CourseContent> checkedContents = List.of();
+
+        Integer duration = 0;
+        Integer maxPoints = 0;
+        if (contents != null) {
+            checkedContents = contents;
+            for (CourseContent courseContent : checkedContents) {
+                duration += courseContent.getDurationMinutes();
+                maxPoints += courseContent.getPoints();
+            }
+        }
+
+        return CourseNoContentResponse.builder()
+                .id(this.getId())
+                .courseName(this.courseName)
+                .courseImageName(this.courseImageName)
+                .courseDescription(this.courseDescription)
+                .level(this.level)
+                .duration(duration)
+                .isPublic(this.isPublic)
+                .maxPoints(maxPoints)
+                .isDeleted(this.isDeleted)
+                .category(this.category)
+                .author(this.author.toResponse())
+                .contentCount(checkedContents.size())
                 .createdAt(this.getCreatedAt())
                 .editedAt(this.getEditedAt())
                 .build();

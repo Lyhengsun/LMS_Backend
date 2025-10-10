@@ -4,30 +4,28 @@ import com.norton.lms_backend.exception.BadRequestException;
 import com.norton.lms_backend.exception.NotFoundException;
 import com.norton.lms_backend.model.dto.request.CourseContentRequest;
 import com.norton.lms_backend.model.dto.request.CourseRequest;
+import com.norton.lms_backend.model.dto.response.CourseContentProgressResponse;
 import com.norton.lms_backend.model.dto.response.CourseContentResponse;
 import com.norton.lms_backend.model.dto.response.CourseDraftResponse;
+import com.norton.lms_backend.model.dto.response.CourseNoContentResponse;
+import com.norton.lms_backend.model.dto.response.CourseProgressResponse;
 import com.norton.lms_backend.model.dto.response.CourseResponse;
 import com.norton.lms_backend.model.dto.response.PagedResponse;
 import com.norton.lms_backend.model.dto.response.PaginationInfo;
-import com.norton.lms_backend.model.entity.AppUser;
-import com.norton.lms_backend.model.entity.Category;
-import com.norton.lms_backend.model.entity.Course;
-import com.norton.lms_backend.model.entity.CourseContent;
-import com.norton.lms_backend.model.entity.CourseDraft;
-import com.norton.lms_backend.model.entity.JoinCourse;
+import com.norton.lms_backend.model.entity.*;
 import com.norton.lms_backend.model.enumeration.CourseLevel;
 import com.norton.lms_backend.model.enumeration.CourseProperty;
-import com.norton.lms_backend.repository.CategoryRepository;
-import com.norton.lms_backend.repository.CourseContentRepository;
-import com.norton.lms_backend.repository.CourseDraftRepository;
-import com.norton.lms_backend.repository.CourseRepository;
-import com.norton.lms_backend.repository.JoinCourseRepository;
+import com.norton.lms_backend.repository.*;
 import com.norton.lms_backend.repository.specification.CourseDraftSpecification;
 import com.norton.lms_backend.repository.specification.CourseSpecification;
 import com.norton.lms_backend.service.CourseService;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 
+import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Objects;
 
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -40,12 +38,16 @@ import org.springframework.stereotype.Service;
 
 @Service
 @RequiredArgsConstructor
+@Slf4j
 public class CourseServiceImpl implements CourseService {
     private final CourseRepository courseRepository;
     private final CategoryRepository categoryRepository;
     private final CourseContentRepository courseContentRepository;
     private final CourseDraftRepository courseDraftRepository;
     private final JoinCourseRepository joinCourseRepository;
+    private final CompleteContentRepository completeContentRepository;
+    private final LeaderboardRepository leaderboardRepository;
+    private final UserLearningStreakRespository userLearningStreakRespository;
 
     private AppUser getCurrentUser() {
         return (AppUser) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
@@ -61,6 +63,17 @@ public class CourseServiceImpl implements CourseService {
                 .orElseThrow(() -> new NotFoundException("Course draft with id: " + id + " not found"));
     }
 
+    private CourseContent findCourseContentById(Long id) {
+        return courseContentRepository.findById(id)
+                .orElseThrow(() -> new NotFoundException("Course content with id: " + id + " not found"));
+    }
+
+    private CourseResponse mapToCourseResponse(Course course) {
+        CourseResponse courseResponse = course.toResponse();
+        courseResponse.setStudentEnrolled(joinCourseRepository.countJoinCourseByCourseId(course.getId()));
+        return courseResponse;
+    }
+
     @Override
     public CourseDraftResponse createCourse(CourseRequest courseRequest) {
         CourseDraft course = courseRequest.toEntityDraft();
@@ -73,15 +86,16 @@ public class CourseServiceImpl implements CourseService {
 
     @Override
     public CourseResponse getCourseById(Long id) {
-        return courseRepository.findById(id)
-                .orElseThrow(() -> new NotFoundException("Course with id " + id + " not found")).toResponse();
+
+        return mapToCourseResponse(courseRepository.findById(id)
+                .orElseThrow(() -> new NotFoundException("Course with id " + id + " not found")));
     }
 
     @Override
     public PagedResponse<CourseResponse> getAllCourses(String name, Long categoryId, CourseLevel level,
-            CourseProperty courseProperty,
-            Direction direction,
-            Integer page, Integer size) {
+                                                       CourseProperty courseProperty,
+                                                       Direction direction,
+                                                       Integer page, Integer size) {
         Pageable pageable = PageRequest.of(page - 1, size, Sort.by(direction, courseProperty.getValue()));
 
         if (categoryId != null) {
@@ -107,7 +121,7 @@ public class CourseServiceImpl implements CourseService {
         Page<Course> courses = courseRepository.findAll(spec, pageable);
 
         return PagedResponse.<CourseResponse>builder()
-                .items(courses.getContent().stream().map(Course::toResponse).toList())
+                .items(courses.getContent().stream().map(this::mapToCourseResponse).toList())
                 .pagination(new PaginationInfo(courses))
                 .build();
     }
@@ -118,7 +132,6 @@ public class CourseServiceImpl implements CourseService {
         course.setCourseName(course.getCourseName());
         course.setCourseDescription(course.getCourseDescription());
         course.setLevel(courseRequest.getLevel());
-        course.setMaxPoints(courseRequest.getMaxPoints());
         return courseRepository.save(course).toResponse();
     }
 
@@ -159,7 +172,7 @@ public class CourseServiceImpl implements CourseService {
 
     @Override
     public PagedResponse<CourseDraftResponse> getCoursesByAuthorId(String name, CourseProperty courseProperty,
-            Direction direction, Integer page, Integer size) {
+                                                                   Direction direction, Integer page, Integer size) {
         Pageable pageable = PageRequest.of(page - 1, size, Sort.by(direction, courseProperty.getValue()));
 
         Specification<CourseDraft> spec = Specification.unrestricted();
@@ -241,10 +254,27 @@ public class CourseServiceImpl implements CourseService {
     }
 
     @Override
-    public PagedResponse<CourseDraftResponse> getUnapprovedCourse(Integer page, Integer size) {
+    public PagedResponse<CourseDraftResponse> getCourseForAdmin(Integer page, Integer size, String name,
+                                                                Boolean isApproved,
+                                                                Boolean isRejected) {
         Pageable pageable = PageRequest.of(page - 1, size);
 
-        Page<CourseDraft> courseDrafts = courseDraftRepository.findAllByIsApproved(false, pageable);
+        Specification<CourseDraft> spec = Specification.unrestricted();
+        spec = spec.and(CourseDraftSpecification.fetchContents());
+
+        if (name != null && !name.isEmpty()) {
+            spec = spec.and(CourseDraftSpecification.courseDraftNameContains(name));
+        }
+
+        if (isApproved != null) {
+            spec = spec.and(CourseDraftSpecification.isApproved(isApproved));
+        }
+
+        if (isRejected != null) {
+            spec = spec.and(CourseDraftSpecification.isRejected(isRejected));
+        }
+
+        Page<CourseDraft> courseDrafts = courseDraftRepository.findAll(spec, pageable);
 
         return PagedResponse.<CourseDraftResponse>builder()
                 .items(courseDrafts.getContent().stream().map(c -> c.toResponse()).toList())
@@ -262,4 +292,109 @@ public class CourseServiceImpl implements CourseService {
         joinCourseRepository.save(newJoinCourse);
         return foundCourse.toResponse();
     }
+
+    @Override
+    public CourseContentResponse completeCourseContent(Long courseContentId) {
+        CourseContent foundCourseContent = findCourseContentById(courseContentId);
+
+        JoinCourse foundJoinCourse = joinCourseRepository.findByStudentAndCourse(getCurrentUser(), foundCourseContent.getCourse())
+                .orElseThrow(() -> new NotFoundException(
+                        "User hasn't joined course with ID" + foundCourseContent.getCourse().getId() + " yet"));
+
+        if (completeContentRepository.findByStudentAndCourseContent(getCurrentUser(), foundCourseContent) != null) {
+            return foundCourseContent.toResponse();
+        }
+
+        CompleteContent newCompleteContent = CompleteContent.builder().student(getCurrentUser())
+                .courseContent(foundCourseContent).build();
+
+        completeContentRepository.saveAndFlush(newCompleteContent);
+
+        try {
+            if (Objects.equals(courseContentRepository.countByCourse(foundCourseContent.getCourse()), completeContentRepository.countByStudentAndCourseContentCourse(getCurrentUser(), foundCourseContent.getCourse()))) {
+                foundJoinCourse.setIsCompleted(true);
+                joinCourseRepository.save(foundJoinCourse);
+            }
+
+            UserLearningStreak foundUserLearningStreak = userLearningStreakRespository.findByAppUser(getCurrentUser());
+            if (foundUserLearningStreak == null) {
+                userLearningStreakRespository.save(UserLearningStreak.builder().appUser(getCurrentUser()).build());
+            } else {
+                if (!foundUserLearningStreak.getLastDayLearning().toLocalDate().equals(LocalDate.now())) {
+                    foundUserLearningStreak.setLearningStreakDay(foundUserLearningStreak.getLearningStreakDay() + 1);
+                    foundUserLearningStreak.setLastDayLearning(LocalDateTime.now());
+                    userLearningStreakRespository.save(foundUserLearningStreak);
+                }
+            }
+
+            Leaderboard foundLeaderboard = leaderboardRepository.findByStudent(getCurrentUser())
+                    .orElseThrow(() -> new NotFoundException(
+                            "leaderboard for user: " + getCurrentUser().getFullName() + "doesn't exist"));
+            foundLeaderboard.setCoursePoints(foundLeaderboard.getCoursePoints() + foundCourseContent.getPoints());
+            leaderboardRepository.save(foundLeaderboard);
+        } catch (Exception e) {
+            log.error("Error occurred while completing contents", e);
+        }
+
+        return foundCourseContent.toResponse();
+    }
+
+    @Override
+    public CourseProgressResponse getCourseProgressByCourseId(Long courseId) {
+        Course foundCourse = findCourseById(courseId);
+        List<CourseContent> courseContents = foundCourse.getContents();
+        List<CompleteContent> completeContents = completeContentRepository
+                .findByStudentAndCourseContentCourse(getCurrentUser(), foundCourse);
+        List<Long> completedContentId = completeContents.stream().map(cc -> cc.getCourseContent().getId()).toList();
+
+        List<CourseContentProgressResponse> courseContentProgressResponses = courseContents.stream()
+                .map(cc -> cc.toProgressResponse(completedContentId.contains(cc.getId()))).toList();
+
+        CourseNoContentResponse courseNoContentResponse = foundCourse.toNoContentResponse();
+
+        return CourseProgressResponse.builder().course(courseNoContentResponse)
+                .contentProgresses(courseContentProgressResponses)
+                .maxCourseContentCount(courseNoContentResponse.getContentCount())
+                .completedCourseContentCount(completeContents.size())
+                .build();
+
+    }
+
+    @Override
+    public void deleteCourseContentById(Long courseContentId) {
+        CourseContent foundCourseContent = findCourseContentById(courseContentId);
+
+        if (foundCourseContent.getCourse().getAuthor().getId() != getCurrentUser().getId()) {
+            throw new BadRequestException("Only the author can delete his own course content");
+        }
+
+        courseContentRepository.deleteById(courseContentId);
+    }
+
+    @Override
+    public CourseDraftResponse getCourseForAdminById(Long courseDraftId) {
+        return findCourseDraftById(courseDraftId).toResponse();
+    }
+
+    @Override
+    public CourseDraftResponse submitCourseDraft(Long courseDraftId) {
+        CourseDraft courseDraft = findCourseDraftById(courseDraftId);
+
+        // Validate that the current user is the author
+        if (!courseDraft.getAuthor().getId().equals(getCurrentUser().getId())) {
+            throw new BadRequestException("You don't have permission to submit this course");
+        }
+
+        // Check if already submitted
+        if (courseDraft.getIsSubmitted()) {
+            throw new BadRequestException("Course draft is already submitted");
+        }
+
+        // Set isSubmitted to true
+        courseDraft.setIsSubmitted(true);
+
+        // Save and return response
+        return courseDraftRepository.save(courseDraft).toResponse();
+    }
+
 }

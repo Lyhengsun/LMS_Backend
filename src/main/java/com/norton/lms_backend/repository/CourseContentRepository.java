@@ -15,6 +15,8 @@ import java.util.List;
 public interface CourseContentRepository extends JpaRepository<CourseContent, Long> {
     List<CourseContent> findByCourseOrderByCourseContentIndex(Course course);
 
+    Integer countByCourse(Course course);
+
     List<CourseContent> findByCourseDraftOrderByCourseContentIndex(CourseDraft courseDraft);
 
     @Modifying

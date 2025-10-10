@@ -20,7 +20,6 @@ public class QuizRequest {
     private CourseLevel level;
     private Integer durationMinutes;
     private Integer maxAttempts;
-    private Integer passingScore;
     private Long categoryId;
     private List<QuestionRequest> questions;
 
@@ -32,7 +31,6 @@ public class QuizRequest {
                 .level(level)
                 .durationMinutes(durationMinutes)
                 .maxAttempts(maxAttempts)
-                .passingScore(passingScore)
                 .build();
     }
 }

@@ -1,5 +1,7 @@
 package com.norton.lms_backend.model.entity;
 
+import com.norton.lms_backend.model.dto.response.UserAnswerResponse;
+
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.JoinColumn;
@@ -17,7 +19,8 @@ import lombok.Setter;
 @AllArgsConstructor
 @NoArgsConstructor
 @Entity
-@Table(name = "user_answers", uniqueConstraints = @UniqueConstraint(columnNames = {"user_id", "take_quiz_id", "question_id"}))
+@Table(name = "user_answers", uniqueConstraints = @UniqueConstraint(columnNames = { "user_id", "take_quiz_id",
+        "question_id" }))
 @Builder
 public class UserAnswer extends BaseEntity {
     @ManyToOne
@@ -41,4 +44,11 @@ public class UserAnswer extends BaseEntity {
 
     @Column(name = "content", nullable = true)
     private String content;
+
+    public UserAnswerResponse toResponse() {
+        return UserAnswerResponse.builder()
+                .questionContent(question.getContent())
+                .answer(answer.toResponse())
+                .build();
+    }
 }

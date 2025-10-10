@@ -46,6 +46,7 @@ public class Question extends BaseEntity {
         }
 
         return QuestionResponse.builder()
+                .id(getId())
                 .content(content)
                 .questionType(questionType)
                 .trueFalseAnswer(trueFalseAnswer)
@@ -63,6 +64,7 @@ public class Question extends BaseEntity {
         }
 
         return QuestionStudentResponse.builder()
+                .id(getId())
                 .content(content)
                 .questionType(questionType)
                 .trueFalseAnswer(trueFalseAnswer)

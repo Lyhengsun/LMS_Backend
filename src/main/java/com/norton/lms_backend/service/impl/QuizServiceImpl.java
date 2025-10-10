@@ -2,46 +2,39 @@ package com.norton.lms_backend.service.impl;
 
 import com.norton.lms_backend.exception.BadRequestException;
 import com.norton.lms_backend.exception.NotFoundException;
+import com.norton.lms_backend.job.ForceSubmitQuizJob;
 import com.norton.lms_backend.model.dto.request.AnswerRequest;
 import com.norton.lms_backend.model.dto.request.QuestionRequest;
 import com.norton.lms_backend.model.dto.request.QuizRequest;
-import com.norton.lms_backend.model.dto.response.AnswerResponse;
-import com.norton.lms_backend.model.dto.response.AnswerStudentResponse;
-import com.norton.lms_backend.model.dto.response.PagedResponse;
-import com.norton.lms_backend.model.dto.response.PaginationInfo;
-import com.norton.lms_backend.model.dto.response.QuestionResponse;
-import com.norton.lms_backend.model.dto.response.QuizResponse;
-import com.norton.lms_backend.model.dto.response.QuizStudentResponse;
-import com.norton.lms_backend.model.dto.response.TakeQuizResponse;
-import com.norton.lms_backend.model.entity.Answer;
-import com.norton.lms_backend.model.entity.AppUser;
-import com.norton.lms_backend.model.entity.Category;
-import com.norton.lms_backend.model.entity.Question;
-import com.norton.lms_backend.model.entity.Quiz;
-import com.norton.lms_backend.model.entity.TakeQuiz;
-import com.norton.lms_backend.model.entity.UserAnswer;
+import com.norton.lms_backend.model.dto.response.*;
+import com.norton.lms_backend.model.entity.*;
 import com.norton.lms_backend.model.enumeration.QuestionType;
-import com.norton.lms_backend.repository.AnswerRepository;
-import com.norton.lms_backend.repository.QuestionRepository;
-import com.norton.lms_backend.repository.QuizRepository;
-import com.norton.lms_backend.repository.TakeQuizRepository;
-import com.norton.lms_backend.repository.UserAnswerRepository;
+import com.norton.lms_backend.repository.*;
+import com.norton.lms_backend.repository.specification.QuizSpecification;
 import com.norton.lms_backend.service.CategoryService;
 import com.norton.lms_backend.service.QuizService;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 
+import java.time.LocalDate;
 import java.time.LocalDateTime;
-import java.time.temporal.ChronoUnit;
+import java.util.Comparator;
+import java.util.Date;
 import java.util.List;
+import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 
+import org.quartz.*;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.jpa.domain.Specification;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 
 @Service
 @RequiredArgsConstructor
+@Slf4j
 public class QuizServiceImpl implements QuizService {
     private final QuizRepository quizRepository;
     private final CategoryService categoryService;
@@ -49,6 +42,44 @@ public class QuizServiceImpl implements QuizService {
     private final AnswerRepository answerRepository;
     private final UserAnswerRepository userAnswerRepository;
     private final TakeQuizRepository takeQuizRepository;
+    private final LeaderboardRepository leaderboardRepository;
+    private final UserLearningStreakRespository userLearningStreakRespository;
+    private final Scheduler scheduler;
+
+    /**
+     * Schedules a job to force submit the quiz at the deadline
+     */
+    private void scheduleForceSubmitJob(TakeQuiz takeQuiz) {
+        try {
+            String jobId = "forceSubmit-" + takeQuiz.getUser().getId() + "-" + takeQuiz.getQuiz().getId() + "-" + takeQuiz.getId();
+
+            JobDetail jobDetail = JobBuilder.newJob(ForceSubmitQuizJob.class)
+                    .withIdentity(jobId)
+                    .usingJobData("userId", takeQuiz.getUser().getId())
+                    .usingJobData("quizId", takeQuiz.getQuiz().getId())
+                    .build();
+
+            // Convert LocalDateTime to Date for Quartz trigger
+            Date deadlineDate = Date.from(takeQuiz.getDeadlineTime()
+                    .atZone(java.time.ZoneId.systemDefault())
+                    .toInstant());
+
+            Trigger trigger = TriggerBuilder.newTrigger()
+                    .withIdentity("forceSubmitTrigger-" + jobId)
+                    .startAt(deadlineDate)
+                    .build();
+
+            scheduler.scheduleJob(jobDetail, trigger);
+
+            log.info("Scheduled force submit job for takeQuizId: {} at {}",
+                    takeQuiz.getId(), takeQuiz.getDeadlineTime());
+
+        } catch (SchedulerException e) {
+            log.error("Failed to schedule force submit job for takeQuizId: {}", takeQuiz.getId(), e);
+            // Don't throw exception - quiz session is already created, job scheduling is non-critical
+        }
+    }
+
 
     private AppUser getCurrentUser() {
         return (AppUser) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
@@ -70,7 +101,7 @@ public class QuizServiceImpl implements QuizService {
 
     @Override
     public QuizResponse createQuiz(QuizRequest quizRequest) {
-        if (quizRequest.getQuestions().size() <= 0) {
+        if (quizRequest.getQuestions().isEmpty()) {
             throw new BadRequestException("A Quiz need to have at least one question");
         }
 
@@ -82,9 +113,9 @@ public class QuizServiceImpl implements QuizService {
         List<Question> questions = quizRequest.getQuestions().stream().map(q -> {
             verifyQuestionRequest(q);
             Question question = q.toEntity(quiz);
-            question.setAnswers(q.getAnswers().stream().map(a -> a.toEntity(question)).toList());
+            question.setAnswers(q.getAnswers().stream().map(a -> a.toEntity(question)).collect(Collectors.toList()));
             return question;
-        }).toList();
+        }).collect(Collectors.toList());
 
         quiz.setQuestions(questions);
 
@@ -92,11 +123,25 @@ public class QuizServiceImpl implements QuizService {
     }
 
     @Override
-    public PagedResponse<QuizResponse> getAllQuizzes(Integer page, Integer size) {
+    public PagedResponse<QuizNoQuestionResponse> getAllQuizzes(Integer page, Integer size, String name) {
         Pageable pageable = PageRequest.of(page - 1, size);
-        Page<Quiz> result = quizRepository.findAll(pageable);
-        return PagedResponse.<QuizResponse>builder()
-                .items(result.getContent().stream().map(Quiz::toResponse).toList())
+
+        Specification<Quiz> spec = Specification.unrestricted();
+
+        if (name != null && !name.isEmpty()) {
+            spec = spec.and(QuizSpecification.quizNameContains(name));
+        }
+
+        Page<Quiz> result = quizRepository.findAll(spec, pageable);
+        return PagedResponse.<QuizNoQuestionResponse>builder()
+                .items(result.getContent().stream().map(q -> {
+                    QuizNoQuestionResponse response = q.toNoQuestionResponse();
+                    if (getCurrentUser().getRole().getRoleName().equals("ROLE_STUDENT")) {
+                        Integer attempts = takeQuizRepository.countTakeQuizByUserAndQuiz(getCurrentUser(), q);
+                        response.setAttemptCount(attempts);
+                    }
+                    return response;
+                }).toList())
                 .pagination(new PaginationInfo(result))
                 .build();
     }
@@ -118,9 +163,12 @@ public class QuizServiceImpl implements QuizService {
         List<Question> questions = quizRequest.getQuestions().stream().map(q -> {
             verifyQuestionRequest(q);
             Question question = q.toEntity(quiz);
-            question.setAnswers(q.getAnswers().stream().map(a -> a.toEntity(question)).toList());
+            if (q.getAnswers() != null) {
+                question.setAnswers(
+                        q.getAnswers().stream().map(a -> a.toEntity(question)).collect(Collectors.toList()));
+            }
             return question;
-        }).toList();
+        }).collect(Collectors.toList());
 
         // Update fields manually
         quiz.setQuizName(quizRequest.getQuizName());
@@ -129,7 +177,6 @@ public class QuizServiceImpl implements QuizService {
         quiz.setLevel(quizRequest.getLevel());
         quiz.setDurationMinutes(quizRequest.getDurationMinutes());
         quiz.setMaxAttempts(quizRequest.getMaxAttempts());
-        quiz.setPassingScore(quizRequest.getPassingScore());
 
         // Set category
         Category category = categoryService.getCategory(quizRequest.getCategoryId());
@@ -145,6 +192,16 @@ public class QuizServiceImpl implements QuizService {
         return quizRepository.save(quiz).toResponse();
     }
 
+    private void cancelForceSubmitJob(TakeQuiz takeQuiz) {
+        try {
+            String jobId = "forceSubmit-" + takeQuiz.getUser().getId() + "-" + takeQuiz.getQuiz().getId() + "-" + takeQuiz.getId();
+            scheduler.deleteJob(org.quartz.JobKey.jobKey(jobId));
+            log.info("Cancelled force submit job for takeQuizId: {}", takeQuiz.getId());
+        } catch (SchedulerException e) {
+            log.warn("Failed to cancel force submit job for takeQuizId: {}", takeQuiz.getId(), e);
+        }
+    }
+
     @Override
     public void deleteQuiz(Long id) {
         Quiz quiz = findQuizById(id);
@@ -154,21 +211,29 @@ public class QuizServiceImpl implements QuizService {
     }
 
     @Override
-    public PagedResponse<QuizResponse> getAllYourQuizzes(Integer page, Integer size) {
+    public PagedResponse<QuizNoQuestionResponse> getAllYourQuizzes(Integer page, Integer size) {
         Pageable pageable = PageRequest.of(page - 1, size);
         Page<Quiz> result = quizRepository.findAllByAuthorId(getCurrentUser().getId(), pageable);
-        return PagedResponse.<QuizResponse>builder()
-                .items(result.getContent().stream().map(Quiz::toResponse).toList())
+        return PagedResponse.<QuizNoQuestionResponse>builder()
+                .items(result.getContent().stream().map(Quiz::toNoQuestionResponse).toList())
                 .pagination(new PaginationInfo(result))
                 .build();
     }
 
     @Override
-    public PagedResponse<QuizResponse> getAllQuizzesByAuthorId(Long id, Integer page, Integer size) {
+    public PagedResponse<QuizNoQuestionResponse> getAllQuizzesByAuthor(Integer page, Integer size, String name) {
         Pageable pageable = PageRequest.of(page - 1, size);
-        Page<Quiz> result = quizRepository.findAllByAuthorId(id, pageable);
-        return PagedResponse.<QuizResponse>builder()
-                .items(result.getContent().stream().map(Quiz::toResponse).toList())
+
+        Specification<Quiz> spec = Specification.unrestricted();
+        spec = spec.and(QuizSpecification.hasAuthorId(getCurrentUser().getId()));
+
+        if (name != null && !name.isEmpty()) {
+            spec = spec.and(QuizSpecification.quizNameContains(name));
+        }
+
+        Page<Quiz> result = quizRepository.findAll(spec, pageable);
+        return PagedResponse.<QuizNoQuestionResponse>builder()
+                .items(result.getContent().stream().map(Quiz::toNoQuestionResponse).toList())
                 .pagination(new PaginationInfo(result))
                 .build();
     }
@@ -184,7 +249,7 @@ public class QuizServiceImpl implements QuizService {
         }
 
         if (request.getQuestionType() == QuestionType.MULTIPLE_CHOICE) {
-            Boolean notValidAnswers = true;
+            boolean notValidAnswers = true;
             for (AnswerRequest answer : request.getAnswers()) {
                 if (!notValidAnswers && answer.getIsCorrect()) {
                     throw new BadRequestException("Multiple Choice question can't have more than one correct answer");
@@ -209,7 +274,9 @@ public class QuizServiceImpl implements QuizService {
 
         verifyQuestionRequest(request);
         Question question = request.toEntity(foundQuiz);
-        question.setAnswers(request.getAnswers().stream().map(a -> a.toEntity(question)).toList());
+        if (request.getAnswers() != null) {
+            question.setAnswers(request.getAnswers().stream().map(a -> a.toEntity(question)).toList());
+        }
         return questionRepository.save(question).toResponse();
     }
 
@@ -226,17 +293,20 @@ public class QuizServiceImpl implements QuizService {
 
     @Override
     public AnswerStudentResponse chooseAnswer(Long takeQuizId, Long answerId) {
-        TakeQuiz foundTakeQuiz = takeQuizRepository.findById(takeQuizId).orElseThrow(() -> new NotFoundException("Quiz session with ID: " + takeQuizId + " not found"));
+        TakeQuiz foundTakeQuiz = takeQuizRepository.findById(takeQuizId)
+                .orElseThrow(() -> new NotFoundException("Quiz session with ID: " + takeQuizId + " not found"));
         Answer foundAnswer = findAnswerById(answerId);
 
         if (foundTakeQuiz.getIsSubmitted()) {
             throw new BadRequestException("The quiz is already submitted");
         }
 
-        UserAnswer foundUserAnswer = userAnswerRepository.findByUserAndQuestionAndTakeQuiz(getCurrentUser(), foundAnswer.getQuestion(), foundTakeQuiz);
+        UserAnswer foundUserAnswer = userAnswerRepository.findByUserAndQuestionAndTakeQuiz(getCurrentUser(),
+                foundAnswer.getQuestion(), foundTakeQuiz);
 
         if (foundUserAnswer != null) {
-            userAnswerRepository.deleteByUserAndQuestionAndTakeQuiz(getCurrentUser(), foundAnswer.getQuestion(), foundTakeQuiz);
+            userAnswerRepository.deleteByUserAndQuestionAndTakeQuiz(getCurrentUser(), foundAnswer.getQuestion(),
+                    foundTakeQuiz);
             userAnswerRepository.flush();
         }
 
@@ -255,35 +325,133 @@ public class QuizServiceImpl implements QuizService {
     @Override
     public TakeQuizResponse studentTakeQuiz(Long quizId) {
         Quiz foundQuiz = findQuizById(quizId);
-        List<TakeQuiz> takeQuizzes = takeQuizRepository.findByQuizAndUserAndIsSubmitted(foundQuiz, getCurrentUser(), true);
-        List<TakeQuiz> unSubmittedQuizzes = takeQuizRepository.findByQuizAndUserAndIsSubmitted(foundQuiz, getCurrentUser(), false);
+        List<TakeQuiz> takeQuizzes = takeQuizRepository.findByQuizAndUserAndIsSubmitted(foundQuiz, getCurrentUser(),
+                true);
+        List<TakeQuiz> unSubmittedQuizzes = takeQuizRepository.findByQuizAndUserAndIsSubmitted(foundQuiz,
+                getCurrentUser(), false);
 
         if (takeQuizzes.size() >= foundQuiz.getMaxAttempts()) {
             throw new BadRequestException("You already exceeded the attempts for this quiz");
         }
 
-        if (unSubmittedQuizzes.size() > 0) {
-            takeQuizRepository.deleteAll(unSubmittedQuizzes);
+        if (!unSubmittedQuizzes.isEmpty()) {
+            // Force submit all unsubmitted quiz sessions
+            unSubmittedQuizzes.forEach(takeQuiz -> {
+                takeQuiz.setIsSubmitted(true);
+                // Optionally set score to 0 or calculate based on current answers
+                if (takeQuiz.getScore() == null) {
+                    takeQuiz.setScore(0);
+                }
+            });
+            takeQuizRepository.saveAll(unSubmittedQuizzes);
         }
 
         TakeQuiz newTakeQuiz = TakeQuiz.builder()
                 .user(getCurrentUser())
                 .quiz(foundQuiz)
-                .deadlineTime(LocalDateTime.now().plus(foundQuiz.getDurationMinutes(), ChronoUnit.MINUTES))
+                .deadlineTime(LocalDateTime.now().plusMinutes(foundQuiz.getDurationMinutes()))
                 .build();
 
-        return takeQuizRepository.save(newTakeQuiz).toResponse();
+        TakeQuiz savedTakeQuiz = takeQuizRepository.save(newTakeQuiz);
+        takeQuizRepository.flush();
+        scheduleForceSubmitJob(savedTakeQuiz);
+        return savedTakeQuiz.toResponse();
     }
 
     @Override
-    public void submitTakenQuiz(Long takeQuizId) {
-        TakeQuiz foundTakeQuiz = takeQuizRepository.findById(takeQuizId).orElseThrow(() -> new NotFoundException("Quiz session with ID: " + takeQuizId + " not found"));
+    public void submitTakenQuiz(Long takeQuizId, List<Long> answerIds) {
+        TakeQuiz foundTakeQuiz = takeQuizRepository.findById(takeQuizId)
+                .orElseThrow(() -> new NotFoundException("Quiz session with ID: " + takeQuizId + " not found"));
 
         if (foundTakeQuiz.getIsSubmitted()) {
             throw new BadRequestException("Quiz session is already submitted");
         }
 
+        List<Answer> foundAnswers = answerIds.stream().map(this::findAnswerById).toList();
+
+        List<UserAnswer> foundUserAnswers = userAnswerRepository.findByUserAndTakeQuiz(getCurrentUser(), foundTakeQuiz);
+
+        if (!foundUserAnswers.isEmpty()) {
+            userAnswerRepository.deleteByUserAndTakeQuiz(getCurrentUser(), foundTakeQuiz);
+            userAnswerRepository.flush();
+        }
+
+        List<UserAnswer> newUserAnswers = foundAnswers.stream().map(a -> UserAnswer.builder()
+                .user(getCurrentUser())
+                .question(a.getQuestion())
+                .takeQuiz(foundTakeQuiz)
+                .answer(a)
+                .isCorrect(a.getIsCorrect())
+                .build()).toList();
+
+        List<UserAnswer> correctUserAnswer = newUserAnswers.stream().filter(UserAnswer::getIsCorrect)
+                .toList();
+
+        Integer takeQuizScore = 0;
+        for (UserAnswer userAnswer : correctUserAnswer) {
+            takeQuizScore += userAnswer.getQuestion().getScore();
+        }
+
+        userAnswerRepository.saveAll(newUserAnswers);
         foundTakeQuiz.setIsSubmitted(true);
-        takeQuizRepository.save(foundTakeQuiz);
+        foundTakeQuiz.setScore(takeQuizScore);
+        TakeQuiz savedTakeQuiz = takeQuizRepository.save(foundTakeQuiz);
+
+        userAnswerRepository.flush();
+        takeQuizRepository.flush();
+        cancelForceSubmitJob(savedTakeQuiz);
+
+        try {
+            UserLearningStreak foundUserLearningStreak = userLearningStreakRespository.findByAppUser(getCurrentUser());
+            if (foundUserLearningStreak == null) {
+                userLearningStreakRespository.save(UserLearningStreak.builder().appUser(getCurrentUser()).build());
+            } else {
+                if (!foundUserLearningStreak.getLastDayLearning().toLocalDate().equals(LocalDate.now())) {
+                    foundUserLearningStreak.setLearningStreakDay(foundUserLearningStreak.getLearningStreakDay() + 1);
+                    foundUserLearningStreak.setLastDayLearning(LocalDateTime.now());
+                    userLearningStreakRespository.save(foundUserLearningStreak);
+                }
+            }
+
+            Leaderboard foundLeaderboard = leaderboardRepository.findByStudent(getCurrentUser())
+                    .orElseThrow(() -> new NotFoundException("Leaderboard for the user doesn't exist"));
+            foundLeaderboard.setQuizPoints(takeQuizRepository.getTotalHighestScoresByUser(getCurrentUser()));
+            leaderboardRepository.save(foundLeaderboard);
+        } catch (Exception e) {
+            log.error("Exception occurred while submitting TakeQuiz", e);
+        }
+    }
+
+    @Override
+    public TakeQuizResponse getTakenQuizById(Long takeQuizId) {
+        TakeQuiz foundTakeQuiz = takeQuizRepository.findById(takeQuizId)
+                .orElseThrow(() -> new NotFoundException("Quiz session with ID: " + takeQuizId + " not found"));
+
+        return foundTakeQuiz.toResponse();
+    }
+
+    @Override
+    public void studentDeleteTakeQuiz(Long takeQuizId) {
+        TakeQuiz foundTakeQuiz = takeQuizRepository.findById(takeQuizId)
+                .orElseThrow(() -> new NotFoundException("Quiz session with ID: " + takeQuizId + " not found"));
+
+        if (!foundTakeQuiz.getUser().getId().equals(getCurrentUser().getId())) {
+            throw new BadRequestException("You are not the student of the quiz session");
+        }
+        if (foundTakeQuiz.getIsSubmitted()) {
+            throw new BadRequestException("Quiz session is already submitted");
+        }
+
+        takeQuizRepository.delete(foundTakeQuiz);
+        cancelForceSubmitJob(foundTakeQuiz);
+    }
+
+    @Override
+    public List<QuizResultResponse> getQuizResult(Long quizId) {
+        Quiz foundQuiz = findQuizById(quizId);
+        List<TakeQuiz> foundTakeQuizzes = takeQuizRepository.findByQuizAndUserAndIsSubmitted(foundQuiz, getCurrentUser(), true).stream().sorted(Comparator.comparing(TakeQuiz::getCreatedAt)).toList();
+
+        List<Integer> indexes = IntStream.range(0, foundTakeQuizzes.size()).boxed().toList();
+        return indexes.stream().map((i) -> foundTakeQuizzes.get(i).toQuizResultResponse(i + 1)).toList();
     }
 }

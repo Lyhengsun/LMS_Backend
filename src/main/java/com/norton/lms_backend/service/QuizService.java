@@ -1,15 +1,11 @@
 package com.norton.lms_backend.service;
 
+import java.util.List;
+
 import com.norton.lms_backend.model.dto.request.AnswerRequest;
 import com.norton.lms_backend.model.dto.request.QuestionRequest;
 import com.norton.lms_backend.model.dto.request.QuizRequest;
-import com.norton.lms_backend.model.dto.response.AnswerResponse;
-import com.norton.lms_backend.model.dto.response.AnswerStudentResponse;
-import com.norton.lms_backend.model.dto.response.PagedResponse;
-import com.norton.lms_backend.model.dto.response.QuestionResponse;
-import com.norton.lms_backend.model.dto.response.QuizResponse;
-import com.norton.lms_backend.model.dto.response.QuizStudentResponse;
-import com.norton.lms_backend.model.dto.response.TakeQuizResponse;
+import com.norton.lms_backend.model.dto.response.*;
 
 import jakarta.validation.constraints.Positive;
 
@@ -27,7 +23,7 @@ public interface QuizService {
      *
      * @return List of all Quiz entities.
      */
-    PagedResponse<QuizResponse> getAllQuizzes(Integer page, Integer size);
+    PagedResponse<QuizNoQuestionResponse> getAllQuizzes(Integer page, Integer size, String name);
 
     /**
      * Get a quiz by its ID.
@@ -53,9 +49,9 @@ public interface QuizService {
      */
     void deleteQuiz(Long id);
 
-    PagedResponse<QuizResponse> getAllYourQuizzes(@Positive Integer page, @Positive Integer size);
+    PagedResponse<QuizNoQuestionResponse> getAllYourQuizzes(@Positive Integer page, @Positive Integer size);
 
-    PagedResponse<QuizResponse> getAllQuizzesByAuthorId(Long id, @Positive Integer page, @Positive Integer size);
+    PagedResponse<QuizNoQuestionResponse> getAllQuizzesByAuthor(@Positive Integer page, @Positive Integer size, String name);
 
     QuizResponse getAllQuizzesByAuthorIdAndQuizId(Long authorId, Long quizId);
 
@@ -67,5 +63,11 @@ public interface QuizService {
 
     TakeQuizResponse studentTakeQuiz(Long quizId);
 
-    void submitTakenQuiz(Long takeQuizId);
+    void submitTakenQuiz(Long takeQuizId, List<Long> answerIds);
+
+    TakeQuizResponse getTakenQuizById(Long takeQuizId);
+
+    void studentDeleteTakeQuiz(Long takeQuizId);
+
+    List<QuizResultResponse> getQuizResult(Long quizId);
 }

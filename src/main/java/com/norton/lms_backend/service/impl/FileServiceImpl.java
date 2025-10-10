@@ -34,8 +34,7 @@ public class FileServiceImpl implements FileService {
     private String bucketName;
 
     private boolean verifyImage(MultipartFile file) {
-        // validate file extension allow only ending with .png, .svg, .jpg, .jpeg, or
-        // .gif
+        // validate file extension allow only ending with .png, .svg, .jpg, .jpeg, or .gif
         List<String> allowFileExtensions = List.of("image/png", "image/svg+xml", "image/jpg", "image/jpeg",
                 "image/gif");
         return allowFileExtensions.contains(file.getContentType());

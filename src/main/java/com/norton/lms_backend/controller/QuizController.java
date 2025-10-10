@@ -3,26 +3,20 @@ package com.norton.lms_backend.controller;
 import com.norton.lms_backend.model.dto.request.AnswerRequest;
 import com.norton.lms_backend.model.dto.request.QuestionRequest;
 import com.norton.lms_backend.model.dto.request.QuizRequest;
-import com.norton.lms_backend.model.dto.response.AnswerResponse;
-import com.norton.lms_backend.model.dto.response.AnswerStudentResponse;
-import com.norton.lms_backend.model.dto.response.ApiResponse;
-import com.norton.lms_backend.model.dto.response.PagedResponse;
-import com.norton.lms_backend.model.dto.response.QuestionResponse;
-import com.norton.lms_backend.model.dto.response.QuizResponse;
-import com.norton.lms_backend.model.dto.response.QuizStudentResponse;
-import com.norton.lms_backend.model.dto.response.TakeQuizResponse;
+import com.norton.lms_backend.model.dto.response.*;
 import com.norton.lms_backend.service.QuizService;
 import com.norton.lms_backend.utils.ResponseUtils;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import jakarta.validation.constraints.Positive;
 import lombok.RequiredArgsConstructor;
 
+import java.util.List;
+
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
-
 
 @RequiredArgsConstructor
 @RestController
@@ -31,11 +25,13 @@ import org.springframework.web.bind.annotation.RequestBody;
 public class QuizController {
     private final QuizService quizService;
 
-    @GetMapping
-    public ResponseEntity<ApiResponse<PagedResponse<QuizResponse>>> getAllQuizzes(
+    @GetMapping("/quizzes")
+    public ResponseEntity<ApiResponse<PagedResponse<QuizNoQuestionResponse>>> getAllQuizzes(
             @RequestParam(defaultValue = "1") @Positive Integer page,
-            @RequestParam(defaultValue = "10") @Positive Integer size) {
-        return ResponseUtils.createResponse("Get all quizzes successfully", quizService.getAllQuizzes(page, size));
+            @RequestParam(defaultValue = "10") @Positive Integer size,
+            @RequestParam(required = false) String name
+            ) {
+        return ResponseUtils.createResponse("Get all quizzes successfully", quizService.getAllQuizzes(page, size, name));
     }
 
     @GetMapping("/quizzes/{quiz-id}")
@@ -61,56 +57,81 @@ public class QuizController {
     }
 
     @GetMapping("/instructors/quizzes")
-    public ResponseEntity<ApiResponse<PagedResponse<QuizResponse>>> getAllYourQuizzes(
+    public ResponseEntity<ApiResponse<PagedResponse<QuizNoQuestionResponse>>> getAllQuizzesByAuthor(
             @RequestParam(defaultValue = "1") @Positive Integer page,
-            @RequestParam(defaultValue = "10") @Positive Integer size) {
+            @RequestParam(defaultValue = "10") @Positive Integer size,
+            @RequestParam(required = false) String name) {
         return ResponseUtils.createResponse("Get all your quizzes successfully",
-                quizService.getAllYourQuizzes(page, size));
+                quizService.getAllQuizzesByAuthor(page, size, name));
     }
 
     @PostMapping("/instructors/quizzes/{quizId}/questions")
-    public ResponseEntity<ApiResponse<QuestionResponse>> createQuestion(@PathVariable Long quizId, @RequestBody QuestionRequest request) {
-        return ResponseUtils.createResponse("Create question successfully", HttpStatus.CREATED, quizService.createQuestion(quizId, request));
+    public ResponseEntity<ApiResponse<QuestionResponse>> createQuestion(@PathVariable Long quizId,
+            @RequestBody QuestionRequest request) {
+        return ResponseUtils.createResponse("Create question successfully", HttpStatus.CREATED,
+                quizService.createQuestion(quizId, request));
     }
 
     @PostMapping("/instructors/quizzes/questions/{questionId}/answers")
-    public ResponseEntity<ApiResponse<AnswerResponse>> createAnswer(@PathVariable Long questionId, @RequestBody AnswerRequest request) {
-        return ResponseUtils.createResponse("Create new answer successsfully", HttpStatus.CREATED, quizService.createAnswer(questionId, request));
+    public ResponseEntity<ApiResponse<AnswerResponse>> createAnswer(@PathVariable Long questionId,
+            @RequestBody AnswerRequest request) {
+        return ResponseUtils.createResponse("Create new answer successfully", HttpStatus.CREATED,
+                quizService.createAnswer(questionId, request));
     }
 
-    @PostMapping("/students/quizzes/taken/{takeQuizId}/answers/{answerId}/chosen") 
-    public ResponseEntity<ApiResponse<AnswerStudentResponse>> chooseAnswer(@PathVariable Long takeQuizId, @PathVariable Long answerId) {
-        return ResponseUtils.createResponse("Choose an answer successfully", HttpStatus.OK, quizService.chooseAnswer(takeQuizId, answerId));
+    // @PostMapping("/students/quizzes/taken/{takeQuizId}/answers/{answerId}/chosen")
+    public ResponseEntity<ApiResponse<AnswerStudentResponse>> chooseAnswer(@PathVariable Long takeQuizId,
+            @PathVariable Long answerId) {
+        return ResponseUtils.createResponse("Choose an answer successfully", HttpStatus.OK,
+                quizService.chooseAnswer(takeQuizId, answerId));
     }
 
     @PostMapping("/students/quizzes/{quizId}/taken")
     public ResponseEntity<ApiResponse<TakeQuizResponse>> takeQuiz(@PathVariable("quizId") Long quizId) {
-        return ResponseUtils.createResponse("Take quiz with id: " + quizId + " successfully", HttpStatus.OK, quizService.studentTakeQuiz(quizId));
+        return ResponseUtils.createResponse("Take quiz with id: " + quizId + " successfully", HttpStatus.OK,
+                quizService.studentTakeQuiz(quizId));
+    }
+
+    @DeleteMapping("/students/quizzes/taken/{takeQuizId}")
+    public ResponseEntity<ApiResponse<Void>> deleteTakeQuiz(@PathVariable("takeQuizId") Long takeQuizId) {
+        quizService.studentDeleteTakeQuiz(takeQuizId);
+        return ResponseUtils.createResponse("Quiz session with id: " + takeQuizId + " deleted successfully");
+    }
+
+    @GetMapping("/students/quizzes/taken/{takeQuizId}")
+    public ResponseEntity<ApiResponse<TakeQuizResponse>> getTakenQuizById(@PathVariable Long takeQuizId) {
+        return ResponseUtils.createResponse("Fetch taken quiz successfully", quizService.getTakenQuizById(takeQuizId));
     }
 
     @PostMapping("/students/quizzes/taken/{takeQuizId}/submit")
-    public ResponseEntity<ApiResponse<Void>> submitTakenQuiz(@PathVariable Long takeQuizId) {
-        quizService.submitTakenQuiz(takeQuizId);
-        
+    public ResponseEntity<ApiResponse<Void>> submitTakenQuiz(@PathVariable Long takeQuizId, @RequestParam List<Long> answerIds) {
+        quizService.submitTakenQuiz(takeQuizId, answerIds);
+
         return ResponseUtils.createResponse("Submit quiz successfully");
     }
-    
-    
+
+    @GetMapping("/students/quizzes/{quizId}/result")
+    public ResponseEntity<ApiResponse<List<QuizResultResponse>>> getQuizResult(@PathVariable Long quizId) {
+        List<QuizResultResponse> quizResults = quizService.getQuizResult(quizId);
+        return ResponseUtils.createResponse("fetch user result successfully", quizResults);
+    }
 
     // @GetMapping("/instructors")
-    // public ResponseEntity<ApiResponse<PagedResponse<QuizResponse>>> getAllQuizzesByAuthorId(
-    //         @PathVariable("author-id") Long id,
-    //         @RequestParam(defaultValue = "1") @Positive Integer page,
-    //         @RequestParam(defaultValue = "10") @Positive Integer size) {
-    //     return ResponseUtils.createResponse("Get all quizzes of author successfully",
-    //             quizService.getAllQuizzesByAuthorId(id, page, size));
+    // public ResponseEntity<ApiResponse<PagedResponse<QuizResponse>>>
+    // getAllQuizzesByAuthorId(
+    // @PathVariable("author-id") Long id,
+    // @RequestParam(defaultValue = "1") @Positive Integer page,
+    // @RequestParam(defaultValue = "10") @Positive Integer size) {
+    // return ResponseUtils.createResponse("Get all quizzes of author successfully",
+    // quizService.getAllQuizzesByAuthorId(id, page, size));
     // }
 
     // @GetMapping("/author/{author-id}/{quiz-id}")
-    // public ResponseEntity<ApiResponse<QuizResponse>> getAllQuizzesByAuthorIdAndQuizId(
-    //         @PathVariable("author-id") Long authorId,
-    //         @PathVariable("quiz-id") Long quizId) {
-    //     return ResponseUtils.createResponse("Get all quizzes of author successfully",
-    //             quizService.getAllQuizzesByAuthorIdAndQuizId(authorId, quizId));
+    // public ResponseEntity<ApiResponse<QuizResponse>>
+    // getAllQuizzesByAuthorIdAndQuizId(
+    // @PathVariable("author-id") Long authorId,
+    // @PathVariable("quiz-id") Long quizId) {
+    // return ResponseUtils.createResponse("Get all quizzes of author successfully",
+    // quizService.getAllQuizzesByAuthorIdAndQuizId(authorId, quizId));
     // }
 }

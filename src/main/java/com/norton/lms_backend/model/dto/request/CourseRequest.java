@@ -26,10 +26,6 @@ public class CourseRequest {
     @NotNull(message = "Level is required")
     private CourseLevel level;
 
-    @NotNull(message = "Max points is required")
-    @Min(value = 1, message = "Max points must be greater than 0")
-    private Integer maxPoints;
-
     @NotNull(message = "Course category ID is required")
     private Long courseCategoryId;
 
@@ -39,7 +35,6 @@ public class CourseRequest {
                 .courseImageName(courseImageName)
                 .courseDescription(this.courseDescription)
                 .level(this.level)
-                .maxPoints(this.maxPoints)
                 .build();
     }
 
@@ -49,7 +44,6 @@ public class CourseRequest {
                 .courseImageName(courseImageName)
                 .courseDescription(courseDescription)
                 .level(level)
-                .maxPoints(maxPoints)
                 .build();
     }
 }

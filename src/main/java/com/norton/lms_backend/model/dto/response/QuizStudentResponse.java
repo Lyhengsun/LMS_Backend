@@ -23,7 +23,7 @@ public class QuizStudentResponse extends BaseEntityResponse {
     private CourseLevel level;
     private Integer durationMinutes;
     private Integer maxAttempts;
-    private Integer passingScore;
+    private Integer maxScore;
     private AppUserResponse author;
     private Category category;
     private List<QuestionStudentResponse> questions;

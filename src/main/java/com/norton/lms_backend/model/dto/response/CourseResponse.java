@@ -2,6 +2,7 @@ package com.norton.lms_backend.model.dto.response;
 
 import java.util.List;
 
+import com.fasterxml.jackson.annotation.JsonInclude;
 import com.norton.lms_backend.model.entity.Category;
 import com.norton.lms_backend.model.enumeration.CourseLevel;
 import lombok.AllArgsConstructor;
@@ -15,6 +16,7 @@ import lombok.experimental.SuperBuilder;
 @AllArgsConstructor
 @NoArgsConstructor
 @SuperBuilder
+@JsonInclude(JsonInclude.Include.NON_NULL)
 public class CourseResponse extends BaseEntityResponse {
     private String courseName;
 
@@ -33,6 +35,8 @@ public class CourseResponse extends BaseEntityResponse {
     private Integer duration;
 
     private Category category;
+
+    private Integer studentEnrolled;
 
     private AppUserResponse author;
 

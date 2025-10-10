@@ -1,5 +1,7 @@
 package com.norton.lms_backend.model.entity;
 
+import java.util.List;
+
 import com.norton.lms_backend.model.dto.response.AnswerResponse;
 import com.norton.lms_backend.model.dto.response.AnswerStudentResponse;
 
@@ -24,6 +26,9 @@ public class Answer extends BaseEntity {
     @ManyToOne
     @JoinColumn(name = "question_id", nullable = false)
     private Question question;
+
+    @OneToMany(mappedBy = "answer", cascade = CascadeType.ALL)
+    private List<UserAnswer> userAnswers;
 
     public AnswerResponse toResponse() {
         return AnswerResponse.builder()

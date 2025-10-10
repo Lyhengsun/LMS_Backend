@@ -3,8 +3,10 @@ package com.norton.lms_backend.controller;
 import com.norton.lms_backend.model.dto.request.CourseContentRequest;
 import com.norton.lms_backend.model.dto.request.CourseRequest;
 import com.norton.lms_backend.model.dto.response.ApiResponse;
+import com.norton.lms_backend.model.dto.response.CourseContentProgressResponse;
 import com.norton.lms_backend.model.dto.response.CourseContentResponse;
 import com.norton.lms_backend.model.dto.response.CourseDraftResponse;
+import com.norton.lms_backend.model.dto.response.CourseProgressResponse;
 import com.norton.lms_backend.model.dto.response.CourseResponse;
 import com.norton.lms_backend.model.dto.response.PagedResponse;
 import com.norton.lms_backend.model.enumeration.CourseProperty;
@@ -19,7 +21,6 @@ import lombok.RequiredArgsConstructor;
 
 import java.util.List;
 
-import org.apache.tomcat.util.http.ResponseUtil;
 import org.springframework.data.domain.Sort.Direction;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -33,7 +34,7 @@ import org.springframework.web.bind.annotation.*;
 public class CourseController {
     private final CourseService courseService;
 
-    @GetMapping("/course")
+    @GetMapping("/courses")
     public ResponseEntity<ApiResponse<PagedResponse<CourseResponse>>> getAllCourse(
             @RequestParam(defaultValue = "1") @Positive Integer page,
             @RequestParam(defaultValue = "10") @Positive Integer size,
@@ -46,7 +47,7 @@ public class CourseController {
                 courseService.getAllCourses(name, categoryId, level, courseProperty, direction, page, size));
     }
 
-    @GetMapping("/instructors/course")
+    @GetMapping("/instructors/courses")
     public ResponseEntity<ApiResponse<PagedResponse<CourseDraftResponse>>> getCourseByAuthorId(
             @RequestParam(defaultValue = "1") @Positive Integer page,
             @RequestParam(defaultValue = "10") @Positive Integer size,
@@ -57,27 +58,38 @@ public class CourseController {
                 courseService.getCoursesByAuthorId(name, courseProperty, direction, page, size));
     }
 
-    @GetMapping("/instructors/course/{courseId}")
+    @GetMapping("/instructors/courses/{courseId}")
     public ResponseEntity<ApiResponse<CourseDraftResponse>> getCourseForAuthorByCourseId(@PathVariable Long courseId) {
         return ResponseUtils.createResponse("Get course with ID: " + courseId + " for author successfully",
                 courseService.getCourseByIdForAuthor(courseId));
     }
 
-    @GetMapping("/course/{course-id}")
+    @GetMapping("/courses/{course-id}")
     public ResponseEntity<ApiResponse<CourseResponse>> getCourseById(@PathVariable("course-id") Long id) {
         return ResponseUtils.createResponse("Get course by id successfully", courseService.getCourseById(id));
     }
 
-    @PostMapping("/instructors/course")
+    @PostMapping("/instructors/courses")
     public ResponseEntity<ApiResponse<CourseDraftResponse>> createCourse(@RequestBody CourseRequest request) {
         return ResponseUtils.createResponse("Create course successfully", courseService.createCourse(request));
     }
 
-    @PostMapping("/instructors/course/course-contents")
+    @PatchMapping("/instructors/courses/{courseDraftId}/submit")
+    public ResponseEntity<ApiResponse<CourseDraftResponse>> submitCourseDraft(@PathVariable Long courseDraftId) {
+        return ResponseUtils.createResponse("Submit course successfully", courseService.submitCourseDraft(courseDraftId));
+    }
+
+    @PostMapping("/instructors/courses/course-contents")
     public ResponseEntity<ApiResponse<CourseContentResponse>> createCourseContent(
             @RequestBody CourseContentRequest request) {
         return ResponseUtils.createResponse("Create a course content successfully", HttpStatus.CREATED,
                 courseService.createCourseContent(request));
+    }
+
+    @DeleteMapping("/instructors/courses/course-contents/{courseContentId}")
+    public ResponseEntity<ApiResponse<Void>> deleteCourseContentById(@PathVariable Long courseContentId) {
+        courseService.deleteCourseContentById(courseContentId);
+        return ResponseUtils.createResponse("Delete the course content successfully");
     }
 
     @GetMapping("/course-contents/{courseId}")
@@ -87,7 +99,7 @@ public class CourseController {
         return ResponseUtils.createResponse("Fetch course content by course Id successfully", response);
     }
 
-    @DeleteMapping("/instructors/course/{courseId}")
+    @DeleteMapping("/instructors/courses/{courseId}")
     public ResponseEntity<ApiResponse<Void>> deleteCourseById(@PathVariable Long courseId) {
         courseService.deleteCourse(courseId);
         return ResponseUtils.createResponse("Delete Course successfully");
@@ -99,16 +111,41 @@ public class CourseController {
                 courseService.approveCourseById(courseId));
     }
 
-    @GetMapping("/admins/courses/unapproved")
+    @GetMapping("/admins/courses")
     public ResponseEntity<ApiResponse<PagedResponse<CourseDraftResponse>>> getUnapprovedCourse(
             @RequestParam(defaultValue = "1") @Positive Integer page,
-            @RequestParam(defaultValue = "10") @Positive Integer size
-    ) {
-        return ResponseUtils.createResponse("Fetch unapproved course successfully", courseService.getUnapprovedCourse(page, size));
+            @RequestParam(defaultValue = "10") @Positive Integer size,
+            @RequestParam(required = false) String name,
+            @RequestParam(required = false) Boolean isApproved,
+            @RequestParam(required = false) Boolean isRejected) {
+        return ResponseUtils.createResponse("Fetch unapproved course successfully",
+                courseService.getCourseForAdmin(page, size, name, isApproved, isRejected));
+    }
+
+    @GetMapping("/admins/courses/{courseDraftId}")
+    public ResponseEntity<ApiResponse<CourseDraftResponse>> getCourseForAdminById(@PathVariable Long courseDraftId) {
+        return ResponseUtils.createResponse("Fetch course with ID: " + courseDraftId + " for admin successfully",
+                courseService.getCourseForAdminById(courseDraftId));
     }
 
     @PostMapping("/students/courses/{courseId}/joining")
     public ResponseEntity<ApiResponse<CourseResponse>> joinCourse(@PathVariable Long courseId) {
-        return ResponseUtils.createResponse("Join a course with ID: " + courseId + " successfully", courseService.joinCourse(courseId));
+        return ResponseUtils.createResponse("Join a course with ID: " + courseId + " successfully",
+                courseService.joinCourse(courseId));
     }
+
+    @PostMapping("/students/course-contents/{courseContentId}/complete")
+    public ResponseEntity<ApiResponse<CourseContentResponse>> completeCourseContent(
+            @PathVariable Long courseContentId) {
+        return ResponseUtils.createResponse("Complete course content with ID: " + courseContentId + " successfully",
+                courseService.completeCourseContent(courseContentId));
+    }
+
+    @GetMapping("/students/courses/{courseId}/progress")
+    public ResponseEntity<ApiResponse<CourseProgressResponse>> getCourseProgressByCourseId(
+            @PathVariable Long courseId) {
+        return ResponseUtils.createResponse("fetch Course progress successfully",
+                courseService.getCourseProgressByCourseId(courseId));
+    }
+
 }

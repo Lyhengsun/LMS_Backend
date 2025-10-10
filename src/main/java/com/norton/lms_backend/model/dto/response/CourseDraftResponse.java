@@ -31,6 +31,8 @@ public class CourseDraftResponse extends BaseEntityResponse {
 
     private Boolean isRejected;
 
+    private Boolean isSubmitted;
+
     private Integer duration;
 
     private Category category;

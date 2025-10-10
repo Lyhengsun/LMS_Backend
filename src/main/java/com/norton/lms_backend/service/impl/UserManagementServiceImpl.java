@@ -7,10 +7,14 @@ import com.norton.lms_backend.model.dto.response.AppUserResponse;
 import com.norton.lms_backend.model.dto.response.PagedResponse;
 import com.norton.lms_backend.model.dto.response.PaginationInfo;
 import com.norton.lms_backend.model.entity.AppUser;
+import com.norton.lms_backend.model.entity.Leaderboard;
 import com.norton.lms_backend.model.entity.Role;
+import com.norton.lms_backend.model.entity.UserLearningStreak;
 import com.norton.lms_backend.model.enumeration.UserProperty;
 import com.norton.lms_backend.repository.AppUserRepository;
+import com.norton.lms_backend.repository.LeaderboardRepository;
 import com.norton.lms_backend.repository.RoleRepository;
+import com.norton.lms_backend.repository.UserLearningStreakRespository;
 import com.norton.lms_backend.service.UserManagementService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
@@ -26,17 +30,17 @@ import org.springframework.transaction.annotation.Transactional;
 @Transactional
 public class UserManagementServiceImpl implements UserManagementService {
     private final AppUserRepository appUserRepository;
+    private final LeaderboardRepository leaderboardRepository;
+    private final UserLearningStreakRespository userLearningStreaksRespository;
     private final RoleRepository roleRepository;
 
     public AppUser findUserById(Long id) {
-        return appUserRepository.findById(id)
-                .orElseThrow(() -> new NotFoundException("User with id " + id + " does not exist"));
+        return appUserRepository.findById(id).orElseThrow(() -> new NotFoundException("User with id " + id + " does not exist"));
     }
 
     @Override
     public AppUserResponse getUserById(Long id) {
-        return appUserRepository.findById(id)
-                .orElseThrow(() -> new NotFoundException("User with id " + id + " does not exist")).toResponse();
+        return appUserRepository.findById(id).orElseThrow(() -> new NotFoundException("User with id " + id + " does not exist")).toResponse();
     }
 
     @Override
@@ -48,8 +52,7 @@ public class UserManagementServiceImpl implements UserManagementService {
     @Override
     public AppUserResponse updateUser(Long id, AppUserRequest appUserRequest) {
         AppUser appUser = findUserById(id);
-        Role role = roleRepository.findById(appUserRequest.getRoleId())
-                .orElseThrow(() -> new NotFoundException("Role with id " + id + " does not exist"));
+        Role role = roleRepository.findById(appUserRequest.getRoleId()).orElseThrow(() -> new NotFoundException("Role with id " + id + " does not exist"));
         appUser.setEmail(appUserRequest.getEmail());
         appUser.setBio(appUserRequest.getBio());
         appUser.setAvatarUrl(appUserRequest.getAvatarUrl());
@@ -75,16 +78,16 @@ public class UserManagementServiceImpl implements UserManagementService {
             throw new BadRequestException("User is already approved");
         }
         appUser.setIsApproved(true);
+        if (appUser.getRole().getRoleName().equals("ROLE_STUDENT")) {
+            leaderboardRepository.save(Leaderboard.builder().student(appUser).build());
+            userLearningStreaksRespository.save(UserLearningStreak.builder().appUser(appUser).build());
+        }
         appUserRepository.save(appUser);
     }
 
     @Override
-    public PagedResponse<AppUserResponse> getAllUser(Integer page, Integer size, Boolean isApproved,
-            UserProperty userProperty, Direction direction) {
-        Pageable pageable = PageRequest.of(
-                Math.max(page - 1, 0),
-                Math.max(size, 1),
-                Sort.by(direction, userProperty.getValue()));
+    public PagedResponse<AppUserResponse> getAllUser(Integer page, Integer size, Boolean isApproved, UserProperty userProperty, Direction direction) {
+        Pageable pageable = PageRequest.of(Math.max(page - 1, 0), Math.max(size, 1), Sort.by(direction, userProperty.getValue()));
         Page<AppUser> userResponses;
         if (isApproved == null) {
             userResponses = appUserRepository.findAllNonAdminUser(pageable);
@@ -92,10 +95,7 @@ public class UserManagementServiceImpl implements UserManagementService {
             userResponses = appUserRepository.findAllNonAdminUserByIsApproved(isApproved, pageable);
         }
 
-        return PagedResponse.<AppUserResponse>builder()
-                .items(userResponses.getContent().stream().map(AppUser::toResponse).toList())
-                .pagination(new PaginationInfo(userResponses))
-                .build();
+        return PagedResponse.<AppUserResponse>builder().items(userResponses.getContent().stream().map(AppUser::toResponse).toList()).pagination(new PaginationInfo(userResponses)).build();
     }
 
 }

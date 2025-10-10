@@ -1,5 +1,8 @@
 package com.norton.lms_backend.model.entity;
 
+import org.hibernate.annotations.OnDelete;
+import org.hibernate.annotations.OnDeleteAction;
+
 import jakarta.persistence.Entity;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
@@ -22,9 +25,11 @@ import lombok.Setter;
 public class CompleteContent extends BaseEntity {
     @ManyToOne
     @JoinColumn(name = "student_id", nullable = false, referencedColumnName = "id")
+    @OnDelete(action = OnDeleteAction.CASCADE)
     private AppUser student;
 
     @ManyToOne
     @JoinColumn(name = "course_content_id", nullable = false, referencedColumnName = "id")
+    @OnDelete(action = OnDeleteAction.CASCADE)
     private CourseContent courseContent;
 }

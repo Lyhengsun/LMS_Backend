@@ -41,14 +41,14 @@ public class CourseDraft extends BaseEntity {
     @Column(name = "level", nullable = false, length = 20)
     private CourseLevel level;
 
-    @Column(name = "max_points", nullable = false)
-    private Integer maxPoints;
-
     @Column(name = "is_approved", nullable = false)
     private Boolean isApproved;
 
     @Column(name = "is_rejected", nullable = false)
     private Boolean isRejected;
+
+    @Column(name = "is_submitted", nullable = true)
+    private Boolean isSubmitted;
 
     @ManyToOne
     @JoinColumn(name = "category_id")
@@ -57,6 +57,7 @@ public class CourseDraft extends BaseEntity {
     @ManyToOne
     @JoinColumn(name = "author_id")
     private AppUser author;
+
 
     @OneToMany(mappedBy = "courseDraft")
     private List<CourseContent> contents;
@@ -69,6 +70,9 @@ public class CourseDraft extends BaseEntity {
         if (isRejected == null) {
             isRejected = false;
         }
+        if (isSubmitted == null) {
+            isSubmitted = false;
+        }
     }
 
     public Course toCourse() {
@@ -77,7 +81,6 @@ public class CourseDraft extends BaseEntity {
                 .courseImageName(courseImageName)
                 .courseDescription(this.courseDescription)
                 .level(this.level)
-                .maxPoints(this.maxPoints)
                 .category(category)
                 .author(author)
                 .courseDraft(this)
@@ -88,10 +91,12 @@ public class CourseDraft extends BaseEntity {
         List<CourseContent> checkedContents = List.of();
 
         Integer duration = 0;
+        Integer maxPoints = 0;
         if (contents != null) {
             checkedContents = contents;
             for (CourseContent courseContent : checkedContents) {
                 duration += courseContent.getDurationMinutes();
+                maxPoints += courseContent.getPoints();
             }
         }
 
@@ -105,6 +110,7 @@ public class CourseDraft extends BaseEntity {
                 .duration(duration)
                 .isApproved(isApproved)
                 .isRejected(isRejected)
+                .isSubmitted(isSubmitted)
                 .category(category)
                 .author(author.toResponse())
                 .contents(checkedContents.stream().map(c -> c.toResponse()).toList())

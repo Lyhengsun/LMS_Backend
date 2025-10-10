@@ -1,5 +1,6 @@
 package com.norton.lms_backend.model.dto.response;
 
+import com.fasterxml.jackson.annotation.JsonInclude;
 import com.norton.lms_backend.model.entity.Category;
 import com.norton.lms_backend.model.enumeration.CourseLevel;
 
@@ -14,6 +15,7 @@ import lombok.experimental.SuperBuilder;
 @AllArgsConstructor
 @NoArgsConstructor
 @SuperBuilder
+@JsonInclude(JsonInclude.Include.NON_NULL)
 public class QuizNoQuestionResponse extends BaseEntityResponse {
     private String quizName;
     private String quizDescription;
@@ -21,7 +23,9 @@ public class QuizNoQuestionResponse extends BaseEntityResponse {
     private CourseLevel level;
     private Integer durationMinutes;
     private Integer maxAttempts;
-    private Integer passingScore;
+    private Integer maxScore;
     private AppUserResponse author;
     private Category category;
+    private Integer questionCount;
+    private Integer attemptCount;
 }
