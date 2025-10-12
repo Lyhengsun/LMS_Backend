@@ -32,7 +32,7 @@ public interface CourseService {
 
     PagedResponse<CourseResponse> getCoursesByCategoryId(Long categoryId, Integer page, Integer size);
 
-    PagedResponse<CourseDraftResponse> getCoursesByAuthorId(String name, CourseProperty courseProperty,
+    PagedResponse<CourseDraftResponse> getCoursesByAuthorId(String name, Long categoryId, CourseLevel level, CourseProperty courseProperty,
             Direction direction,
             Integer page, Integer size);
 

@@ -24,5 +24,7 @@ public interface CourseDraftRepository extends JpaRepository<CourseDraft, Long>,
 
     Integer countByAuthorIdAndIsApprovedAndIsSubmitted(Long userId, Boolean isApproved, Boolean isSubmitted);
 
+    Integer countByAuthorIdAndIsRejected(Long userId, Boolean isRejected);
+
     Page<CourseDraft> findAllByIsApproved(Boolean isApproved, Pageable pageable);
 }

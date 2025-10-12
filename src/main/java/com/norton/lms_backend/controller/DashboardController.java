@@ -57,4 +57,21 @@ public class DashboardController {
     ) {
         return ResponseUtils.createResponse("Fetch courses for instructor dashboard successfully", dashboardService.getInstructorCoursesForDashboard(page, size));
     }
+
+    @GetMapping("/instructors/dashboard/course-status-distribution")
+    ResponseEntity<ApiResponse<CourseStatusDistributionResponse>> getCourseStatusDistribution() {
+        return ResponseUtils.createResponse("Fetch course status distribution successfully", dashboardService.getCourseStatusDistribution());
+    }
+
+    @GetMapping("/instructors/dashboard/quiz-performance-distribution")
+    ResponseEntity<ApiResponse<QuizPerformanceDistributionResponse>> getQuizPerformanceDistribution() {
+        return ResponseUtils.createResponse("Fetch quiz performance distribution successfully", dashboardService.getQuizPerformanceDistribution());
+    }
+
+    @GetMapping("/instructors/dashboard/quiz-attempts-over-time")
+    ResponseEntity<ApiResponse<QuizAttemptsOverTimeResponse>> getQuizAttemptsOverTime(
+            @RequestParam(defaultValue = "30") @Positive Integer days
+    ) {
+        return ResponseUtils.createResponse("Fetch quiz attempts over time successfully", dashboardService.getQuizAttemptsOverTime(days));
+    }
 }

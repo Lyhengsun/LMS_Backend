@@ -16,4 +16,10 @@ public interface DashboardService {
     InstructorStatsResponse getInstructorSummaryStat();
 
     PagedResponse<InstructorDashboardCourseResponse> getInstructorCoursesForDashboard(@Positive Integer page, @Positive Integer size);
+
+    CourseStatusDistributionResponse getCourseStatusDistribution();
+
+    QuizPerformanceDistributionResponse getQuizPerformanceDistribution();
+
+    QuizAttemptsOverTimeResponse getQuizAttemptsOverTime(@Positive Integer days);
 }

@@ -124,4 +124,42 @@ public interface TakeQuizRepository extends JpaRepository<TakeQuiz, Long> {
             """)
     Integer countTakeQuizCreatedTodayByQuizAuthor(@Param("authorId") Long authorId);
 
+    @Query("""
+            SELECT COUNT(t)
+            FROM TakeQuiz t
+            WHERE t.quiz.author.id = :authorId
+            AND t.isSubmitted = true
+            AND CAST(t.score AS double) > (
+                SELECT SUM(q.score) * 0.5
+                FROM Question q
+                WHERE q.quiz = t.quiz
+            )
+            """)
+    Integer countPassedQuizAttemptsByAuthor(@Param("authorId") Long authorId);
+
+    @Query("""
+            SELECT COUNT(t)
+            FROM TakeQuiz t
+            WHERE t.quiz.author.id = :authorId
+            AND t.isSubmitted = true
+            AND CAST(t.score AS double) <= (
+                SELECT SUM(q.score) * 0.5
+                FROM Question q
+                WHERE q.quiz = t.quiz
+            )
+            """)
+    Integer countFailedQuizAttemptsByAuthor(@Param("authorId") Long authorId);
+
+    @Query("""
+            SELECT t
+            FROM TakeQuiz t
+            WHERE t.quiz.author.id = :authorId
+            AND t.createdAt >= :fromDate
+            ORDER BY t.createdAt ASC
+            """)
+    List<TakeQuiz> findQuizAttemptsByAuthorFromDate(
+            @Param("authorId") Long authorId,
+            @Param("fromDate") java.time.LocalDateTime fromDate
+    );
+
 }

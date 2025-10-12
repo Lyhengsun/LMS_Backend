@@ -7,7 +7,10 @@ import com.norton.lms_backend.model.dto.request.QuestionRequest;
 import com.norton.lms_backend.model.dto.request.QuizRequest;
 import com.norton.lms_backend.model.dto.response.*;
 
+import com.norton.lms_backend.model.enumeration.CourseLevel;
+import com.norton.lms_backend.model.enumeration.QuizProperty;
 import jakarta.validation.constraints.Positive;
+import org.springframework.data.domain.Sort;
 
 public interface QuizService {
     /**
@@ -23,7 +26,15 @@ public interface QuizService {
      *
      * @return List of all Quiz entities.
      */
-    PagedResponse<QuizNoQuestionResponse> getAllQuizzes(Integer page, Integer size, String name);
+    PagedResponse<QuizNoQuestionResponse> getAllQuizzes(
+            Integer page,
+            Integer size,
+            String name,
+            Long categoryId,
+            CourseLevel level,
+            QuizProperty quizProperty,
+            Sort.Direction direction
+    );
 
     /**
      * Get a quiz by its ID.

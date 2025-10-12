@@ -77,6 +77,32 @@ services:
   #   networks:
   #     - lms_backend_network
 
+  mysql_db:
+    image: mysql:8.0
+    environment:
+      MYSQL_ROOT_PASSWORD: example
+      MYSQL_DATABASE: lms_db
+      MYSQL_USER: lms_db
+      MYSQL_PASSWORD: password
+      MYSQL_ALLOW_EMPTY_PASSWORD: 1
+    networks:
+      - lms_backend_network
+    ports:
+      - 8004:3306
+
+  phpmyadmin:
+    image: phpmyadmin/phpmyadmin:latest
+    depends_on:
+      - mysql_db
+    environment:
+      PMA_HOST: mysql_db
+      PMA_PORT: 3306
+      MYSQL_ROOT_PASSWORD: example # Use the same root password as the db service
+    ports:
+      - "8080:80" # Map host port 8080 to container port 80
+    networks:
+      - lms_backend_network
+
 networks:
   lms_backend_network:
     driver: bridge

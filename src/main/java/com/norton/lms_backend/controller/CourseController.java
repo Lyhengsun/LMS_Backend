@@ -52,10 +52,12 @@ public class CourseController {
             @RequestParam(defaultValue = "1") @Positive Integer page,
             @RequestParam(defaultValue = "10") @Positive Integer size,
             @RequestParam(required = false) String name,
+            @RequestParam(required = false) Long categoryId,
+            @RequestParam(required = false) CourseLevel level,
             @RequestParam(defaultValue = "CREATED_AT") CourseProperty courseProperty,
             @RequestParam(defaultValue = "ASC") Direction direction) {
         return ResponseUtils.createResponse("Get all courses by author id successfully",
-                courseService.getCoursesByAuthorId(name, courseProperty, direction, page, size));
+                courseService.getCoursesByAuthorId(name, categoryId, level, courseProperty, direction, page, size));
     }
 
     @GetMapping("/instructors/courses/{courseId}")

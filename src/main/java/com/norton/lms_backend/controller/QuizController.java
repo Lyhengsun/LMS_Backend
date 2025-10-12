@@ -4,6 +4,8 @@ import com.norton.lms_backend.model.dto.request.AnswerRequest;
 import com.norton.lms_backend.model.dto.request.QuestionRequest;
 import com.norton.lms_backend.model.dto.request.QuizRequest;
 import com.norton.lms_backend.model.dto.response.*;
+import com.norton.lms_backend.model.enumeration.CourseLevel;
+import com.norton.lms_backend.model.enumeration.QuizProperty;
 import com.norton.lms_backend.service.QuizService;
 import com.norton.lms_backend.utils.ResponseUtils;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
@@ -12,6 +14,7 @@ import lombok.RequiredArgsConstructor;
 
 import java.util.List;
 
+import org.springframework.data.domain.Sort;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -26,13 +29,19 @@ public class QuizController {
     private final QuizService quizService;
 
     @GetMapping("/quizzes")
-    public ResponseEntity<ApiResponse<PagedResponse<QuizNoQuestionResponse>>> getAllQuizzes(
-            @RequestParam(defaultValue = "1") @Positive Integer page,
-            @RequestParam(defaultValue = "10") @Positive Integer size,
-            @RequestParam(required = false) String name
-            ) {
-        return ResponseUtils.createResponse("Get all quizzes successfully", quizService.getAllQuizzes(page, size, name));
-    }
+public ResponseEntity<ApiResponse<PagedResponse<QuizNoQuestionResponse>>> getAllQuizzes(
+        @RequestParam(defaultValue = "1") @Positive Integer page,
+        @RequestParam(defaultValue = "10") @Positive Integer size,
+        @RequestParam(required = false) String name,
+        @RequestParam(required = false) Long categoryId,
+        @RequestParam(required = false) CourseLevel level,
+        @RequestParam(defaultValue = "CREATED_AT") QuizProperty quizProperty,
+        @RequestParam(defaultValue = "ASC") Sort.Direction direction
+) {
+    return ResponseUtils.createResponse("Get all quizzes successfully",
+            quizService.getAllQuizzes(page, size, name, categoryId, level, quizProperty, direction));
+}
+
 
     @GetMapping("/quizzes/{quiz-id}")
     public ResponseEntity<ApiResponse<QuizResponse>> getQuizById(@PathVariable("quiz-id") Long id) {

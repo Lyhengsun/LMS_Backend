@@ -8,7 +8,9 @@ import com.norton.lms_backend.model.dto.request.QuestionRequest;
 import com.norton.lms_backend.model.dto.request.QuizRequest;
 import com.norton.lms_backend.model.dto.response.*;
 import com.norton.lms_backend.model.entity.*;
+import com.norton.lms_backend.model.enumeration.CourseLevel;
 import com.norton.lms_backend.model.enumeration.QuestionType;
+import com.norton.lms_backend.model.enumeration.QuizProperty;
 import com.norton.lms_backend.repository.*;
 import com.norton.lms_backend.repository.specification.QuizSpecification;
 import com.norton.lms_backend.service.CategoryService;
@@ -28,6 +30,7 @@ import org.quartz.*;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
@@ -123,13 +126,29 @@ public class QuizServiceImpl implements QuizService {
     }
 
     @Override
-    public PagedResponse<QuizNoQuestionResponse> getAllQuizzes(Integer page, Integer size, String name) {
-        Pageable pageable = PageRequest.of(page - 1, size);
+    public PagedResponse<QuizNoQuestionResponse> getAllQuizzes(
+            Integer page,
+            Integer size,
+            String name,
+            Long categoryId,
+            CourseLevel level,
+            QuizProperty quizProperty,
+            Sort.Direction direction
+    ) {
+        Pageable pageable = PageRequest.of(page - 1, size, Sort.by(direction, quizProperty.getValue()));
 
         Specification<Quiz> spec = Specification.unrestricted();
 
         if (name != null && !name.isEmpty()) {
             spec = spec.and(QuizSpecification.quizNameContains(name));
+        }
+
+        if (categoryId != null) {
+            spec = spec.and(QuizSpecification.hasCategoryId(categoryId));
+        }
+
+        if (level != null) {
+            spec = spec.and(QuizSpecification.hasLevel(level));
         }
 
         Page<Quiz> result = quizRepository.findAll(spec, pageable);
@@ -145,6 +164,7 @@ public class QuizServiceImpl implements QuizService {
                 .pagination(new PaginationInfo(result))
                 .build();
     }
+
 
     @Override
     public QuizResponse getQuizById(Long id) {

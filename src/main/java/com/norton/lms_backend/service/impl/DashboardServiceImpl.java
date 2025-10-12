@@ -190,4 +190,63 @@ public class DashboardServiceImpl implements DashboardService {
                 .pagination(new PaginationInfo(courses))
                 .build();
     }
+
+    @Override
+    public CourseStatusDistributionResponse getCourseStatusDistribution() {
+        Integer published = courseDraftRepository.countByAuthorIdAndIsApproved(getCurrentUser().getId(), true);
+        Integer pending = courseDraftRepository.countByAuthorIdAndIsApprovedAndIsSubmitted(getCurrentUser().getId(), false, true);
+        Integer rejected = courseDraftRepository.countByAuthorIdAndIsRejected(getCurrentUser().getId(), true);
+        Integer draft = courseDraftRepository.countByAuthorIdAndIsApproved(getCurrentUser().getId(), false) - pending - rejected;
+
+        return CourseStatusDistributionResponse.builder()
+                .published(published)
+                .draft(draft)
+                .pending(pending)
+                .rejected(rejected)
+                .build();
+    }
+
+    @Override
+    public QuizPerformanceDistributionResponse getQuizPerformanceDistribution() {
+        Integer passed = takeQuizRepository.countPassedQuizAttemptsByAuthor(getCurrentUser().getId());
+        Integer failed = takeQuizRepository.countFailedQuizAttemptsByAuthor(getCurrentUser().getId());
+
+        return QuizPerformanceDistributionResponse.builder()
+                .passed(passed)
+                .failed(failed)
+                .build();
+    }
+
+    @Override
+    public QuizAttemptsOverTimeResponse getQuizAttemptsOverTime(Integer days) {
+        LocalDate endDate = LocalDate.now();
+        LocalDate startDate = endDate.minusDays(days - 1);
+        java.time.LocalDateTime startDateTime = startDate.atStartOfDay();
+
+        List<TakeQuiz> attempts = takeQuizRepository.findQuizAttemptsByAuthorFromDate(
+                getCurrentUser().getId(),
+                startDateTime
+        );
+
+        // Group attempts by date
+        java.util.Map<LocalDate, Long> attemptsByDate = attempts.stream()
+                .collect(java.util.stream.Collectors.groupingBy(
+                        takeQuiz -> takeQuiz.getCreatedAt().toLocalDate(),
+                        java.util.stream.Collectors.counting()
+                ));
+
+        // Create list with all dates in range, filling in zeros for missing dates
+        List<QuizAttemptsOverTimeResponse.DailyAttempt> dailyAttempts = new java.util.ArrayList<>();
+        for (LocalDate date = startDate; !date.isAfter(endDate); date = date.plusDays(1)) {
+            Long count = attemptsByDate.getOrDefault(date, 0L);
+            dailyAttempts.add(QuizAttemptsOverTimeResponse.DailyAttempt.builder()
+                    .date(date)
+                    .count(count.intValue())
+                    .build());
+        }
+
+        return QuizAttemptsOverTimeResponse.builder()
+                .dailyAttempts(dailyAttempts)
+                .build();
+    }
 }

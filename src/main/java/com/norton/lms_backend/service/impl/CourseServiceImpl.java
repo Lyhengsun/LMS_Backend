@@ -171,16 +171,32 @@ public class CourseServiceImpl implements CourseService {
     }
 
     @Override
-    public PagedResponse<CourseDraftResponse> getCoursesByAuthorId(String name, CourseProperty courseProperty,
+    public PagedResponse<CourseDraftResponse> getCoursesByAuthorId(String name, Long categoryId, CourseLevel level, CourseProperty courseProperty,
                                                                    Direction direction, Integer page, Integer size) {
         Pageable pageable = PageRequest.of(page - 1, size, Sort.by(direction, courseProperty.getValue()));
 
+        // Validate categoryId exists if provided (similar to getAllCourses)
+        if (categoryId != null) {
+            categoryRepository.findById(categoryId)
+                    .orElseThrow(() -> new BadRequestException("Category with ID: " + categoryId + " doesn't exist"));
+        }
+
         Specification<CourseDraft> spec = Specification.unrestricted();
-        spec = spec.and(CourseDraftSpecification.fetchContents());
-        spec = spec.and(CourseDraftSpecification.hasAuthorId(getCurrentUser().getId()));
+        spec = spec.and(CourseDraftSpecification.fetchContents())
+                .and(CourseDraftSpecification.hasAuthorId(getCurrentUser().getId()));
 
         if (name != null && !name.isEmpty()) {
             spec = spec.and(CourseDraftSpecification.courseDraftNameContains(name));
+        }
+
+        // Add categoryId filter
+        if (categoryId != null) {
+            spec = spec.and(CourseDraftSpecification.hasCategoryId(categoryId));
+        }
+
+        // Add level filter
+        if (level != null) {
+            spec = spec.and(CourseDraftSpecification.hasLevel(level));
         }
 
         Page<CourseDraft> courses = courseDraftRepository.findAll(spec, pageable);
