@@ -17,6 +17,8 @@ import com.norton.lms_backend.model.entity.CourseContent;
 public interface CompleteContentRepository extends JpaRepository<CompleteContent, Long> {
     CompleteContent findByStudentAndCourseContent(AppUser student, CourseContent courseContent);
 
+    List<CompleteContent> findByStudent(AppUser student);
+
     Integer countByStudentAndCourseContentCourse(AppUser student, Course course);
 
     List<CompleteContent> findByStudentAndCourseContentCourse(AppUser student, Course course);

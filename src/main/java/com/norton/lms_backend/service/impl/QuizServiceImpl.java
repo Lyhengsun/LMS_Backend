@@ -14,6 +14,7 @@ import com.norton.lms_backend.model.enumeration.QuizProperty;
 import com.norton.lms_backend.repository.*;
 import com.norton.lms_backend.repository.specification.QuizSpecification;
 import com.norton.lms_backend.service.CategoryService;
+import com.norton.lms_backend.service.LeaderboardService;
 import com.norton.lms_backend.service.QuizService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -45,7 +46,7 @@ public class QuizServiceImpl implements QuizService {
     private final AnswerRepository answerRepository;
     private final UserAnswerRepository userAnswerRepository;
     private final TakeQuizRepository takeQuizRepository;
-    private final LeaderboardRepository leaderboardRepository;
+    private final LeaderboardService leaderboardService;
     private final UserLearningStreakRespository userLearningStreakRespository;
     private final Scheduler scheduler;
 
@@ -433,10 +434,7 @@ public class QuizServiceImpl implements QuizService {
                 }
             }
 
-            Leaderboard foundLeaderboard = leaderboardRepository.findByStudent(getCurrentUser())
-                    .orElseThrow(() -> new NotFoundException("Leaderboard for the user doesn't exist"));
-            foundLeaderboard.setQuizPoints(takeQuizRepository.getTotalHighestScoresByUser(getCurrentUser()));
-            leaderboardRepository.save(foundLeaderboard);
+            leaderboardService.updateLeaderboardQuizPoint();
         } catch (Exception e) {
             log.error("Exception occurred while submitting TakeQuiz", e);
         }

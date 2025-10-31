@@ -37,4 +37,9 @@ public class LeaderboardController {
     public ResponseEntity<ApiResponse<LeaderboardResponse>> getLeaderboardForCurrentStudent() {
         return ResponseUtils.createResponse("Fetch leaderboard for current user successfully", leaderboardService.getLeaderboardForCurrentStudent());
     }
+
+    @GetMapping("/current-student-rank")
+    public ResponseEntity<ApiResponse<Integer>> getLeaderboardForCurrentStudentRank() {
+        return ResponseUtils.createResponse("Fetch rank of current student successfully", leaderboardService.getLeaderboardForCurrentStudentRank());
+    }
 }

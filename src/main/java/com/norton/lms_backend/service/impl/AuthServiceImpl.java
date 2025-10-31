@@ -182,7 +182,7 @@ public class AuthServiceImpl implements AuthService {
         if(storedOTP == null) throw new BadRequestException("OTP already expired");
         if (!storedOTP.equals(otpCode)) throw new BadRequestException("OTP code doesn't match");
 
-        redisTemplate.delete(otpCode);
+        redisTemplate.delete(email);
 
         String password = passwordEncoder.encode(newPassword);
         appUser.setPassword(password);

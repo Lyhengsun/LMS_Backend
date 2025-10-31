@@ -19,6 +19,7 @@ import com.norton.lms_backend.repository.*;
 import com.norton.lms_backend.repository.specification.CourseDraftSpecification;
 import com.norton.lms_backend.repository.specification.CourseSpecification;
 import com.norton.lms_backend.service.CourseService;
+import com.norton.lms_backend.service.LeaderboardService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
@@ -46,7 +47,7 @@ public class CourseServiceImpl implements CourseService {
     private final CourseDraftRepository courseDraftRepository;
     private final JoinCourseRepository joinCourseRepository;
     private final CompleteContentRepository completeContentRepository;
-    private final LeaderboardRepository leaderboardRepository;
+    private final LeaderboardService leaderboardService;
     private final UserLearningStreakRespository userLearningStreakRespository;
 
     private AppUser getCurrentUser() {
@@ -343,11 +344,7 @@ public class CourseServiceImpl implements CourseService {
                 }
             }
 
-            Leaderboard foundLeaderboard = leaderboardRepository.findByStudent(getCurrentUser())
-                    .orElseThrow(() -> new NotFoundException(
-                            "leaderboard for user: " + getCurrentUser().getFullName() + "doesn't exist"));
-            foundLeaderboard.setCoursePoints(foundLeaderboard.getCoursePoints() + foundCourseContent.getPoints());
-            leaderboardRepository.save(foundLeaderboard);
+            leaderboardService.updateLeaderboardCoursePoint();
         } catch (Exception e) {
             log.error("Error occurred while completing contents", e);
         }

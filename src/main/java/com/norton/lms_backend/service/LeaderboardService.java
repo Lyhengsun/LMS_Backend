@@ -7,6 +7,11 @@ public interface LeaderboardService {
 
     PagedResponse<LeaderboardResponse> getAllLeaderboards(Integer page, Integer size, String name);
 
-
     LeaderboardResponse getLeaderboardForCurrentStudent();
+
+    void updateLeaderboardCoursePoint();
+
+    void updateLeaderboardQuizPoint();
+
+    Integer getLeaderboardForCurrentStudentRank();
 }
