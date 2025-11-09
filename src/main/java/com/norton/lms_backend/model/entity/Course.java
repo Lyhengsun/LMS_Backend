@@ -1,9 +1,11 @@
 package com.norton.lms_backend.model.entity;
 
+import java.math.BigDecimal;
 import java.util.List;
 
 import com.norton.lms_backend.model.dto.response.CourseNoContentResponse;
 import com.norton.lms_backend.model.dto.response.CourseResponse;
+import com.norton.lms_backend.model.enumeration.CourseAvailability;
 import com.norton.lms_backend.model.enumeration.CourseLevel;
 import jakarta.persistence.*;
 import lombok.*;
@@ -33,6 +35,12 @@ public class Course extends BaseEntity {
 
     @Column(name = "is_deleted", nullable = false)
     private Boolean isDeleted;
+
+    @Column(nullable = false, columnDefinition = "numeric(38,2) DEFAULT 0")
+    private BigDecimal price;
+
+    @Column(name = "course_availability", columnDefinition = "smallint DEFAULT 0", nullable = false)
+    private CourseAvailability courseAvailability;
 
     @ManyToOne
     @JoinColumn(name = "category_id")
@@ -72,7 +80,7 @@ public class Course extends BaseEntity {
             }
         }
 
-        return CourseResponse.builder()
+        CourseResponse response = CourseResponse.builder()
                 .id(this.getId())
                 .courseName(this.courseName)
                 .courseImageName(this.courseImageName)
@@ -83,11 +91,18 @@ public class Course extends BaseEntity {
                 .isPublic(this.isPublic)
                 .isDeleted(this.isDeleted)
                 .category(this.category)
+                .courseAvailability(this.courseAvailability)
+                .price(this.price.doubleValue())
                 .author(this.author.toResponse())
                 .contents(checkedContents.stream().map((c) -> c.toResponse()).toList())
                 .createdAt(this.getCreatedAt())
                 .editedAt(this.getEditedAt())
                 .build();
+
+        if (this.courseAvailability == CourseAvailability.FREE) {
+            response.setIsAccessible(true);
+        }
+        return response;
     }
 
     public CourseNoContentResponse toNoContentResponse() {
@@ -103,7 +118,7 @@ public class Course extends BaseEntity {
             }
         }
 
-        return CourseNoContentResponse.builder()
+        CourseNoContentResponse response = CourseNoContentResponse.builder()
                 .id(this.getId())
                 .courseName(this.courseName)
                 .courseImageName(this.courseImageName)
@@ -116,8 +131,15 @@ public class Course extends BaseEntity {
                 .category(this.category)
                 .author(this.author.toResponse())
                 .contentCount(checkedContents.size())
+                .courseAvailability(this.courseAvailability)
+                .price(this.price.doubleValue())
                 .createdAt(this.getCreatedAt())
                 .editedAt(this.getEditedAt())
                 .build();
+
+        if (this.courseAvailability == CourseAvailability.FREE) {
+            response.setIsAccessible(true);
+        }
+        return response;
     }
 }

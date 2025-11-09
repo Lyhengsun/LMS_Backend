@@ -49,6 +49,7 @@ public class CourseServiceImpl implements CourseService {
     private final CompleteContentRepository completeContentRepository;
     private final LeaderboardService leaderboardService;
     private final UserLearningStreakRespository userLearningStreakRespository;
+    private final CoursePaymentRepository coursePaymentRepository;
 
     private AppUser getCurrentUser() {
         return (AppUser) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
@@ -70,7 +71,11 @@ public class CourseServiceImpl implements CourseService {
     }
 
     private CourseResponse mapToCourseResponse(Course course) {
+        CoursePayment coursePayment = coursePaymentRepository.findByPayerIdAndCourseId(getCurrentUser().getId(), course.getId()).orElse(null);
         CourseResponse courseResponse = course.toResponse();
+        if (coursePayment != null) {
+            courseResponse.setIsAccessible(coursePayment.getIsPaid());
+        }
         courseResponse.setStudentEnrolled(joinCourseRepository.countJoinCourseByCourseId(course.getId()));
         return courseResponse;
     }
@@ -143,20 +148,11 @@ public class CourseServiceImpl implements CourseService {
             throw new BadRequestException("You don't have permission to delete this course");
         }
 
-        Course course = courseRepository.findByCourseDraft(courseDraft);
-
-        if (course != null) {
-            if (!course.getAuthor().getId().equals(getCurrentUser().getId())) {
-                throw new BadRequestException("You don't have permission to delete this course");
-            }
-            courseRepository.delete(course);
+        if (courseDraft.getIsApproved()) {
+            throw new BadRequestException("This course is already approved by the admin and can't be deleted by the author");
         }
 
-        if (course == null) {
-            courseContentRepository.deleteAllByCourseDraftId(courseDraft.getId());
-        }
-
-        courseDraftRepository.delete(courseDraft);
+        deleteAndCleanCourse(courseDraft);
     }
 
     @Override
@@ -172,8 +168,8 @@ public class CourseServiceImpl implements CourseService {
     }
 
     @Override
-    public PagedResponse<CourseDraftResponse> getCoursesByAuthorId(String name, Long categoryId, CourseLevel level, CourseProperty courseProperty,
-                                                                   Direction direction, Integer page, Integer size) {
+    public PagedResponse<CourseDraftResponse> getCoursesForAuthor(String name, Long categoryId, CourseLevel level, CourseProperty courseProperty,
+                                                                  Direction direction, Integer page, Integer size) {
         Pageable pageable = PageRequest.of(page - 1, size, Sort.by(direction, courseProperty.getValue()));
 
         // Validate categoryId exists if provided (similar to getAllCourses)
@@ -223,6 +219,10 @@ public class CourseServiceImpl implements CourseService {
         if (request.getCourseDraftId() != null) {
             foundDraftCourse = findCourseDraftById(request.getCourseDraftId());
             foundCourse = courseRepository.findByCourseDraft(foundDraftCourse);
+        }
+
+        if (foundDraftCourse != null && foundDraftCourse.getIsApproved()) {
+            throw new BadRequestException("You can't add content to an approved course. Please contact the admin to unapprove your course for edit");
         }
 
         CourseContent newCourseContent = request.toEntity();
@@ -410,4 +410,26 @@ public class CourseServiceImpl implements CourseService {
         return courseDraftRepository.save(courseDraft).toResponse();
     }
 
+    @Override
+    public void deleteCourseForAdmin(Long courseId) {
+        CourseDraft courseDraft = findCourseDraftById(courseId);
+        if (!courseDraft.getIsSubmitted()) {
+            throw new BadRequestException("You can't delete a course that is not submitted yet");
+        }
+
+        deleteAndCleanCourse(courseDraft);
+    }
+
+    private void deleteAndCleanCourse(CourseDraft courseDraft) {
+        Course course = courseRepository.findByCourseDraft(courseDraft);
+        if (course != null) {
+            courseRepository.delete(course);
+        }
+
+        if (course == null) {
+            courseContentRepository.deleteAllByCourseDraftId(courseDraft.getId());
+        }
+
+        courseDraftRepository.delete(courseDraft);
+    }
 }

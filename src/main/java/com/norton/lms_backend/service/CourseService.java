@@ -9,8 +9,6 @@ import com.norton.lms_backend.model.dto.response.CourseResponse;
 import com.norton.lms_backend.model.dto.response.PagedResponse;
 import com.norton.lms_backend.model.enumeration.CourseProperty;
 
-import jakarta.validation.constraints.Positive;
-
 import com.norton.lms_backend.model.enumeration.CourseLevel;
 
 import java.util.List;
@@ -32,9 +30,9 @@ public interface CourseService {
 
     PagedResponse<CourseResponse> getCoursesByCategoryId(Long categoryId, Integer page, Integer size);
 
-    PagedResponse<CourseDraftResponse> getCoursesByAuthorId(String name, Long categoryId, CourseLevel level, CourseProperty courseProperty,
-            Direction direction,
-            Integer page, Integer size);
+    PagedResponse<CourseDraftResponse> getCoursesForAuthor(String name, Long categoryId, CourseLevel level, CourseProperty courseProperty,
+                                                           Direction direction,
+                                                           Integer page, Integer size);
 
     CourseContentResponse createCourseContent(CourseContentRequest request);
 
@@ -57,4 +55,6 @@ public interface CourseService {
     CourseDraftResponse getCourseForAdminById(Long courseDraftId);
 
     CourseDraftResponse submitCourseDraft(Long courseDraftId);
+
+    void deleteCourseForAdmin(Long courseId);
 }

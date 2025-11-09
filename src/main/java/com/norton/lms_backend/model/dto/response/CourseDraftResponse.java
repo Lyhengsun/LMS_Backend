@@ -3,12 +3,10 @@ package com.norton.lms_backend.model.dto.response;
 import java.util.List;
 
 import com.norton.lms_backend.model.entity.Category;
+import com.norton.lms_backend.model.enumeration.CourseAvailability;
 import com.norton.lms_backend.model.enumeration.CourseLevel;
 
-import lombok.AllArgsConstructor;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
-import lombok.Setter;
+import lombok.*;
 import lombok.experimental.SuperBuilder;
 
 @Getter
@@ -36,6 +34,13 @@ public class CourseDraftResponse extends BaseEntityResponse {
     private Integer duration;
 
     private Category category;
+
+    private CourseAvailability courseAvailability;
+
+    private Double price;
+
+    @Builder.Default
+    private Boolean isAccessible = true;
 
     private AppUserResponse author;
 

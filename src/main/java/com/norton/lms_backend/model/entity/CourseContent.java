@@ -30,6 +30,9 @@ public class CourseContent extends BaseEntity {
     @Column(name = "points", nullable = true)
     private Integer points;
 
+    @Column(name = "require_payment", nullable = false, columnDefinition = "boolean DEFAULT false")
+    private Boolean requirePayment;
+
     @ManyToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "course_id", nullable = true)
     private Course course;
@@ -46,6 +49,7 @@ public class CourseContent extends BaseEntity {
                 .videoFileName(videoFileName)
                 .durationMinutes(durationMinutes)
                 .points(points)
+                .requirePayment(requirePayment)
                 .createdAt(getCreatedAt())
                 .editedAt(getEditedAt()).build();
     }

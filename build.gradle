@@ -54,6 +54,9 @@ dependencies {
 	runtimeOnly("io.jsonwebtoken:jjwt-impl:0.12.6")
 	// https://mvnrepository.com/artifact/io.jsonwebtoken/jjwt-jackson
 	runtimeOnly("io.jsonwebtoken:jjwt-jackson:0.12.6")
+
+	// https://mvnrepository.com/artifact/kh.org.nbc.bakong_khqr/sdk-java
+	implementation 'kh.org.nbc.bakong_khqr:sdk-java:1.0.0.9'
 }
 
 tasks.named('test') {

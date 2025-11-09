@@ -3,7 +3,6 @@ package com.norton.lms_backend.controller;
 import com.norton.lms_backend.model.dto.request.CourseContentRequest;
 import com.norton.lms_backend.model.dto.request.CourseRequest;
 import com.norton.lms_backend.model.dto.response.ApiResponse;
-import com.norton.lms_backend.model.dto.response.CourseContentProgressResponse;
 import com.norton.lms_backend.model.dto.response.CourseContentResponse;
 import com.norton.lms_backend.model.dto.response.CourseDraftResponse;
 import com.norton.lms_backend.model.dto.response.CourseProgressResponse;
@@ -57,7 +56,7 @@ public class CourseController {
             @RequestParam(defaultValue = "CREATED_AT") CourseProperty courseProperty,
             @RequestParam(defaultValue = "ASC") Direction direction) {
         return ResponseUtils.createResponse("Get all courses by author id successfully",
-                courseService.getCoursesByAuthorId(name, categoryId, level, courseProperty, direction, page, size));
+                courseService.getCoursesForAuthor(name, categoryId, level, courseProperty, direction, page, size));
     }
 
     @GetMapping("/instructors/courses/{courseId}")
@@ -104,6 +103,12 @@ public class CourseController {
     @DeleteMapping("/instructors/courses/{courseId}")
     public ResponseEntity<ApiResponse<Void>> deleteCourseById(@PathVariable Long courseId) {
         courseService.deleteCourse(courseId);
+        return ResponseUtils.createResponse("Delete Course successfully");
+    }
+
+    @DeleteMapping("/admins/courses/{courseId}")
+    public ResponseEntity<ApiResponse<Void>> deleteCourseByIdForAdmin(@PathVariable Long courseId) {
+        courseService.deleteCourseForAdmin(courseId);
         return ResponseUtils.createResponse("Delete Course successfully");
     }
 

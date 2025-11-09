@@ -19,6 +19,7 @@ public class CourseContentRequest {
     private String videoFileName;
     private Integer durationMinutes;
     private Integer points;
+    private Boolean requirePayment;
     private Long courseId;
     private Long courseDraftId;
 
@@ -29,6 +30,7 @@ public class CourseContentRequest {
                 .videoFileName(videoFileName)
                 .durationMinutes(durationMinutes)
                 .points(points)
+                .requirePayment(requirePayment)
                 .build();
     }
 }

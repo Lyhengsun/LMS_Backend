@@ -56,9 +56,13 @@ public class AppUser extends BaseEntity implements UserDetails {
     @Column(name = "phone_number", length = 10, nullable = true)
     private String phoneNumber;
 
+    @Column(name = "backong_account_id", length = 250, nullable = true)
+    private String backongAccountId;
+
     @ManyToOne(optional = false)
     @JoinColumn(name = "role_id")
     private Role role;
+
 
     @PrePersist
     private void prePersist() {

@@ -1,8 +1,10 @@
 package com.norton.lms_backend.model.entity;
 
+import java.math.BigDecimal;
 import java.util.List;
 
 import com.norton.lms_backend.model.dto.response.CourseDraftResponse;
+import com.norton.lms_backend.model.enumeration.CourseAvailability;
 import com.norton.lms_backend.model.enumeration.CourseLevel;
 
 import jakarta.persistence.CascadeType;
@@ -50,9 +52,17 @@ public class CourseDraft extends BaseEntity {
     @Column(name = "is_submitted", nullable = true)
     private Boolean isSubmitted;
 
+    @Column(nullable = false, columnDefinition = "numeric(38,2) DEFAULT 0")
+    private BigDecimal price;
+
+    @Column(name = "course_availability", columnDefinition = "smallint DEFAULT 0", nullable = false)
+    private CourseAvailability courseAvailability;
+
+
     @ManyToOne
     @JoinColumn(name = "category_id")
     private Category category;
+
 
     @ManyToOne
     @JoinColumn(name = "author_id")
@@ -82,6 +92,8 @@ public class CourseDraft extends BaseEntity {
                 .courseDescription(this.courseDescription)
                 .level(this.level)
                 .category(category)
+                .courseAvailability(courseAvailability)
+                .price(price)
                 .author(author)
                 .courseDraft(this)
                 .build();
@@ -111,6 +123,9 @@ public class CourseDraft extends BaseEntity {
                 .isApproved(isApproved)
                 .isRejected(isRejected)
                 .isSubmitted(isSubmitted)
+                .courseAvailability(courseAvailability)
+                .price(price.doubleValue())
+                .isAccessible(true)
                 .category(category)
                 .author(author.toResponse())
                 .contents(checkedContents.stream().map(c -> c.toResponse()).toList())

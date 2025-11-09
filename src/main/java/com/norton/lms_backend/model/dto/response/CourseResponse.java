@@ -4,11 +4,9 @@ import java.util.List;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.norton.lms_backend.model.entity.Category;
+import com.norton.lms_backend.model.enumeration.CourseAvailability;
 import com.norton.lms_backend.model.enumeration.CourseLevel;
-import lombok.AllArgsConstructor;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
-import lombok.Setter;
+import lombok.*;
 import lombok.experimental.SuperBuilder;
 
 @Getter
@@ -37,6 +35,13 @@ public class CourseResponse extends BaseEntityResponse {
     private Category category;
 
     private Integer studentEnrolled;
+
+    private CourseAvailability courseAvailability;
+
+    private Double price;
+
+    @Builder.Default
+    private Boolean isAccessible = false;
 
     private AppUserResponse author;
 

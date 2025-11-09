@@ -1,12 +1,10 @@
 package com.norton.lms_backend.model.dto.response;
 
 import com.norton.lms_backend.model.entity.Category;
+import com.norton.lms_backend.model.enumeration.CourseAvailability;
 import com.norton.lms_backend.model.enumeration.CourseLevel;
 
-import lombok.AllArgsConstructor;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
-import lombok.Setter;
+import lombok.*;
 import lombok.experimental.SuperBuilder;
 
 @Getter
@@ -36,4 +34,11 @@ public class CourseNoContentResponse extends BaseEntityResponse {
     private AppUserResponse author;
 
     private Integer contentCount;
+
+    private CourseAvailability courseAvailability;
+
+    private Double price;
+
+    @Builder.Default
+    private Boolean isAccessible = true;
 }

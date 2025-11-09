@@ -2,9 +2,12 @@ package com.norton.lms_backend.model.dto.request;
 
 import com.norton.lms_backend.model.entity.Course;
 import com.norton.lms_backend.model.entity.CourseDraft;
+import com.norton.lms_backend.model.enumeration.CourseAvailability;
 import com.norton.lms_backend.model.enumeration.CourseLevel;
 import lombok.*;
 import jakarta.validation.constraints.*;
+
+import java.math.BigDecimal;
 
 @Getter
 @Setter
@@ -29,6 +32,11 @@ public class CourseRequest {
     @NotNull(message = "Course category ID is required")
     private Long courseCategoryId;
 
+    @NotNull(message = "Course")
+    private CourseAvailability courseAvailability;
+
+    private BigDecimal price;
+
     public Course toEntity() {
         return Course.builder()
                 .courseName(this.courseName)
@@ -44,6 +52,8 @@ public class CourseRequest {
                 .courseImageName(courseImageName)
                 .courseDescription(courseDescription)
                 .level(level)
+                .courseAvailability(courseAvailability)
+                .price(price != null ? price : BigDecimal.ZERO)
                 .build();
     }
 }

@@ -17,4 +17,5 @@ public class CourseContentResponse extends BaseEntityResponse {
     private String videoFileName;
     private Integer durationMinutes;
     private Integer points;
+    private Boolean requirePayment;
 }
