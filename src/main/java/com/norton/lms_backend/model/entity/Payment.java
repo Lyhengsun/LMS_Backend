@@ -1,5 +1,6 @@
 package com.norton.lms_backend.model.entity;
 
+import com.norton.lms_backend.model.dto.response.ShortenPaymentResponse;
 import com.norton.lms_backend.model.enumeration.PaymentStatus;
 import jakarta.persistence.*;
 import lombok.*;
@@ -53,5 +54,17 @@ public class Payment extends BaseEntity {
         if (transactionId == null) {
             transactionId = UUID.randomUUID().toString();
         }
+    }
+
+    public ShortenPaymentResponse toShortenPaymentResponse() {
+        return ShortenPaymentResponse.builder()
+                .transactionId(transactionId)
+                .amount(amount)
+                .currency(currency)
+                .md5Hash(md5Hash)
+                .status(status)
+                .merchantName(merchantName)
+                .billNumber(billNumber)
+                .build();
     }
 }

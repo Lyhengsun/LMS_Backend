@@ -20,5 +20,6 @@ public class AppUserResponse extends BaseEntityResponse {
     private String avatarUrl;
     private String bio;
     private String phoneNumber;
+    private String bakongAccountId;
     private String role;
 }

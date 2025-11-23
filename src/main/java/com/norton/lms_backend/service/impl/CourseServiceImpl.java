@@ -13,6 +13,7 @@ import com.norton.lms_backend.model.dto.response.CourseResponse;
 import com.norton.lms_backend.model.dto.response.PagedResponse;
 import com.norton.lms_backend.model.dto.response.PaginationInfo;
 import com.norton.lms_backend.model.entity.*;
+import com.norton.lms_backend.model.enumeration.CourseAvailability;
 import com.norton.lms_backend.model.enumeration.CourseLevel;
 import com.norton.lms_backend.model.enumeration.CourseProperty;
 import com.norton.lms_backend.repository.*;
@@ -85,8 +86,26 @@ public class CourseServiceImpl implements CourseService {
         CourseDraft course = courseRequest.toEntityDraft();
         Category category = categoryRepository.findById(courseRequest.getCourseCategoryId()).orElseThrow(
                 () -> new NotFoundException("Category with id " + courseRequest.getCourseCategoryId() + " not found"));
+
+        AppUser currentUser = getCurrentUser();
+
+        if (courseRequest.getCourseAvailability() != CourseAvailability.FREE) {
+            if (currentUser.getBackongAccountId() == null) {
+                throw new BadRequestException("Current user has no bakong account");
+            }
+            if (courseRequest.getPrice().doubleValue() <= 0) {
+                throw new BadRequestException("Price must be greater than 0 for non free course");
+            }
+        }
+
+        if (courseRequest.getCourseAvailability() == CourseAvailability.FREE) {
+            if (courseRequest.getPrice().doubleValue() > 0) {
+                throw new BadRequestException("Price can't be greater than 0 for free course");
+            }
+        }
+
         course.setCategory(category);
-        course.setAuthor(getCurrentUser());
+        course.setAuthor(currentUser);
         return courseDraftRepository.save(course).toResponse();
     }
 
@@ -223,6 +242,12 @@ public class CourseServiceImpl implements CourseService {
 
         if (foundDraftCourse != null && foundDraftCourse.getIsApproved()) {
             throw new BadRequestException("You can't add content to an approved course. Please contact the admin to unapprove your course for edit");
+        }
+
+        if (foundDraftCourse != null && foundDraftCourse.getCourseAvailability() == CourseAvailability.FREE) {
+            if (request.getRequirePayment()) {
+                throw new BadRequestException("Content of free course can't require payment");
+            }
         }
 
         CourseContent newCourseContent = request.toEntity();

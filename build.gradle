@@ -43,6 +43,7 @@ dependencies {
 	implementation 'org.springframework.boot:spring-boot-starter-data-redis'
 	implementation 'org.springframework.boot:spring-boot-starter-cache'
 	implementation 'org.springframework.boot:spring-boot-starter-mail'
+	implementation 'org.springframework.boot:spring-boot-starter-webflux'
 
 	// https://mvnrepository.com/artifact/io.minio/minio
 	implementation 'io.minio:minio:8.5.14'

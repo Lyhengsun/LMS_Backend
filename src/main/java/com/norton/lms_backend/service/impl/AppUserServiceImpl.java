@@ -1,5 +1,8 @@
 package com.norton.lms_backend.service.impl;
 
+import com.norton.lms_backend.model.dto.request.UpdateProfileRequest;
+import com.norton.lms_backend.model.dto.response.BakongAccountResponse;
+import com.norton.lms_backend.service.KHQRPaymentService;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
@@ -26,6 +29,7 @@ public class AppUserServiceImpl implements AppUserService {
     private final AppUserRepository appUserRepository;
     private final RoleRepository roleRepository;
     private final PasswordEncoder passwordEncoder;
+    private final KHQRPaymentService khqrPaymentService;
 
     private AppUser getCurrentUser() {
         return (AppUser) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
@@ -60,5 +64,26 @@ public class AppUserServiceImpl implements AppUserService {
     @Override
     public AppUserResponse getCurrentUserInfo() {
         return getCurrentUser().toResponse();
+    }
+
+    @Override
+    public AppUserResponse setBakongAccountId(String bakongAccountId) {
+        BakongAccountResponse bakongAccountResponse = khqrPaymentService.verifyBakongAccountId(bakongAccountId);
+        if (bakongAccountResponse == null || bakongAccountResponse.getResponseCode() != 0) {
+            throw new BadRequestException("Invalid bakong account ID");
+        }
+        AppUser currentUser = getCurrentUser();
+        currentUser.setBackongAccountId(bakongAccountId);
+        return appUserRepository.save(currentUser).toResponse();
+    }
+
+    @Override
+    public AppUserResponse updateProfile(UpdateProfileRequest request) {
+        AppUser currentUser = getCurrentUser();
+        AppUser foundUser = appUserRepository.findById(currentUser.getId()).orElseThrow(() -> new NotFoundException("User with ID: " + currentUser.getId() + " doesn't exist"));
+        foundUser.setAvatarUrl(request.getAvatarUrl());
+        foundUser.setPhoneNumber(request.getPhoneNumber());
+        foundUser.setBio(request.getBio());
+        return appUserRepository.save(foundUser).toResponse();
     }
 }

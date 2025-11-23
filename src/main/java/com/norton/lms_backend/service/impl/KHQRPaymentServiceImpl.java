@@ -2,12 +2,9 @@ package com.norton.lms_backend.service.impl;
 
 import com.norton.lms_backend.exception.BadRequestException;
 import com.norton.lms_backend.exception.NotFoundException;
-import com.norton.lms_backend.model.dto.response.PaymentResponse;
-import com.norton.lms_backend.model.dto.response.PaymentStatusResponse;
-import com.norton.lms_backend.model.entity.AppUser;
-import com.norton.lms_backend.model.entity.Course;
-import com.norton.lms_backend.model.entity.CoursePayment;
-import com.norton.lms_backend.model.entity.Payment;
+import com.norton.lms_backend.model.dto.request.BakongAccountRequest;
+import com.norton.lms_backend.model.dto.response.*;
+import com.norton.lms_backend.model.entity.*;
 import com.norton.lms_backend.model.enumeration.CourseAvailability;
 import com.norton.lms_backend.model.enumeration.PaymentStatus;
 import com.norton.lms_backend.repository.CoursePaymentRepository;
@@ -22,21 +19,29 @@ import kh.org.nbc.bakong_khqr.model.KHQRData;
 import kh.org.nbc.bakong_khqr.model.KHQRResponse;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.http.*;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.client.RestTemplate;
+import org.springframework.web.reactive.function.client.WebClient;
+import reactor.core.publisher.Mono;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Objects;
 import java.util.UUID;
 
 @Service
 @Slf4j
 @RequiredArgsConstructor
 public class KHQRPaymentServiceImpl implements KHQRPaymentService {
+    @Qualifier("verifyBakongAccountWebClient")
+    private final WebClient verifyBakongAccountWebClient;
     private final RestTemplate restTemplate;
     private final CourseRepository courseRepository;
     private final PaymentRepository paymentRepository;
@@ -109,6 +114,11 @@ public class KHQRPaymentServiceImpl implements KHQRPaymentService {
                 .isPaid(false)
                 .build();
 
+        CoursePayment foundCoursePayment = coursePaymentRepository.findByPayerIdAndCourseId(payer.getId(), foundCourse.getId()).orElse(null);
+        if (foundCoursePayment != null) {
+            coursePaymentRepository.delete(foundCoursePayment);
+            coursePaymentRepository.flush();
+        }
         coursePaymentRepository.save(coursePayment);
 
         log.info("Payment created with transaction ID: {}", payment.getTransactionId());
@@ -243,5 +253,29 @@ public class KHQRPaymentServiceImpl implements KHQRPaymentService {
                     .description("Error checking status: " + e.getMessage())
                     .build();
         }
+    }
+
+    @Override
+    public BakongAccountResponse verifyBakongAccountId(String bakongAccountId) {
+        return verifyAccount(bakongAccountId).block();
+    }
+
+    @Override
+    public PagedResponse<CoursePaymentResponse> fetchPaymentByRole(Integer page, Integer size) {
+        AppUser currentUser = getCurrentUser();
+        Pageable pageable = PageRequest.of(page - 1, size);
+
+        return null;
+    }
+
+    public Mono<BakongAccountResponse> verifyAccount(String accountId) {
+        // The API likely expects a POST request with the account ID in the body
+        // The exact JSON structure can be found in the official documentation
+        BakongAccountRequest request = new BakongAccountRequest(accountId);
+
+        return verifyBakongAccountWebClient.post()
+                .body(Mono.just(request), BakongAccountRequest.class)
+                .retrieve()
+                .bodyToMono(BakongAccountResponse.class);
     }
 }

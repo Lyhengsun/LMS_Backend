@@ -1,5 +1,6 @@
 package com.norton.lms_backend.model.entity;
 
+import com.norton.lms_backend.model.dto.response.CoursePaymentResponse;
 import jakarta.persistence.*;
 import lombok.*;
 
@@ -31,5 +32,15 @@ public class CoursePayment extends BaseEntity {
         if (isPaid == null) {
             isPaid = false;
         }
+    }
+
+    public CoursePaymentResponse toCoursePaymentResponse() {
+        return CoursePaymentResponse.builder()
+                .id(getId())
+                .courseName(course.getCourseName())
+                .isPaid(isPaid)
+                .payer(payer.toResponse())
+                .payment(payment)
+                .build();
     }
 }

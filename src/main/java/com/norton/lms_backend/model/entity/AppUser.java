@@ -92,6 +92,6 @@ public class AppUser extends BaseEntity implements UserDetails {
         return AppUserResponse.builder().id(getId()).createdAt(getCreatedAt()).editedAt(getEditedAt())
                 .fullName(fullName).email(email).isVerified(isVerified).avatarUrl(avatarUrl).bio(bio)
                 .role(role.getRoleName()).phoneNumber(phoneNumber).isApproved(isApproved).isDisabled(isDisabled)
-                .isVerified(isVerified).build();
+                .isVerified(isVerified).bakongAccountId(backongAccountId).build();
     }
 }
