@@ -21,6 +21,7 @@ import lombok.extern.slf4j.Slf4j;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.Date;
 import java.util.List;
@@ -265,6 +266,14 @@ public class QuizServiceImpl implements QuizService {
     }
 
     public void verifyQuestionRequest(QuestionRequest request) {
+        if (request.getQuestionType() == QuestionType.TRUE_FALSE && request.getAnswers() != null && !request.getAnswers().isEmpty()) {
+            throw new BadRequestException("True and False question doesn't need to submit answer");
+        }
+
+        if (request.getQuestionType() == QuestionType.TRUE_FALSE && request.getTrueFalseAnswer() == null) {
+            throw new BadRequestException("True and False question need to specify the true false answer");
+        }
+
         if (request.getQuestionType() != QuestionType.TRUE_FALSE && request.getAnswers().size() < 2) {
             throw new BadRequestException("Mutiple choice question need to have at least 2 answers");
         }
@@ -295,8 +304,22 @@ public class QuizServiceImpl implements QuizService {
 
         verifyQuestionRequest(request);
         Question question = request.toEntity(foundQuiz);
-        if (request.getAnswers() != null) {
+        if (question.getQuestionType() == QuestionType.MULTIPLE_CHOICE && request.getAnswers() != null) {
             question.setAnswers(request.getAnswers().stream().map(a -> a.toEntity(question)).toList());
+        }
+        if (question.getQuestionType() == QuestionType.TRUE_FALSE && question.getTrueFalseAnswer() != null) {
+            List<Answer> answers = new ArrayList<>();
+            answers.add(Answer.builder()
+                    .content("True")
+                    .isCorrect(question.getTrueFalseAnswer())
+                    .question(question)
+                    .build());
+            answers.add(Answer.builder()
+                    .content("False")
+                    .isCorrect(!question.getTrueFalseAnswer())
+                    .question(question)
+                    .build());
+            question.setAnswers(answers);
         }
         return questionRepository.save(question).toResponse();
     }

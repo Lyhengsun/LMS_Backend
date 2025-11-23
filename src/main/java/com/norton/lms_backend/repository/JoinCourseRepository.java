@@ -19,6 +19,10 @@ public interface JoinCourseRepository extends JpaRepository<JoinCourse, Long> {
 
     Page<JoinCourse> findByStudentAndIsCompleted(AppUser student, boolean isCompleted, Pageable pageable);
 
+    Page<JoinCourse> findByCourse(Course course, Pageable pageable);
+
+    Page<JoinCourse> findByCourseAndStudentFullNameContaining(Course course, String studentFullName, Pageable pageable);
+
     Integer countJoinCourseByCourseId(Long courseId);
 
     Integer countJoinCourseByStudentId(Long studentId);

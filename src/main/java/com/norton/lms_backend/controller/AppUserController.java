@@ -16,26 +16,26 @@ import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import lombok.RequiredArgsConstructor;
 
 @RestController
-@RequestMapping("/api/v1/app-users")
+@RequestMapping("/api/v1")
 @RequiredArgsConstructor
 @SecurityRequirement(name = "bearerAuth")
 @Tag(name = "Profile Management")
 public class AppUserController {
     private final AppUserService appUserService;
 
-    @GetMapping
+    @GetMapping("/app-users")
     public ResponseEntity<ApiResponse<AppUserResponse>> getCurrentUser() {
         return ResponseUtils.createResponse("Fetch current user successfully", appUserService.getCurrentUserInfo());
     }
 
     @Operation(summary = "Set bakong account id for current user")
-    @PostMapping("/bakong-account/{bakongAccountId}")
+    @PostMapping("/instructors/app-users/bakong-account/{bakongAccountId}")
     public ResponseEntity<ApiResponse<AppUserResponse>> setBakongAccountId(@PathVariable String bakongAccountId) {
         return ResponseUtils.createResponse("Set bakongId successfully", appUserService.setBakongAccountId(bakongAccountId));
     }
 
     @Operation(summary = "For user to update some information of their profile")
-    @PutMapping
+    @PutMapping("/app-users")
     public ResponseEntity<ApiResponse<AppUserResponse>> updateProfile(@RequestBody UpdateProfileRequest request) {
         return ResponseUtils.createResponse("Update user profile successfully", appUserService.updateProfile(request));
     }

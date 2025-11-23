@@ -22,4 +22,6 @@ public interface DashboardService {
     QuizPerformanceDistributionResponse getQuizPerformanceDistribution();
 
     QuizAttemptsOverTimeResponse getQuizAttemptsOverTime(@Positive Integer days);
+
+    PagedResponse<StudentCourseProgressResponse> getStudentCourseProgressesByCourseId(Long courseId, @Positive Integer page, @Positive Integer size, String name);
 }

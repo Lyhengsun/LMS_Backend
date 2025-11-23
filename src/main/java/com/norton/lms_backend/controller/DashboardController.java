@@ -7,10 +7,7 @@ import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import jakarta.validation.constraints.Positive;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 @RestController
 @RequestMapping("/api/v1")
@@ -73,5 +70,15 @@ public class DashboardController {
             @RequestParam(defaultValue = "30") @Positive Integer days
     ) {
         return ResponseUtils.createResponse("Fetch quiz attempts over time successfully", dashboardService.getQuizAttemptsOverTime(days));
+    }
+
+    @GetMapping("/instructors/dashboard/courses/{courseId}/student-course-progresses")
+    ResponseEntity<ApiResponse<PagedResponse<StudentCourseProgressResponse>>> getStudentCourseProgressesByCourseId(
+            @PathVariable Long courseId,
+            @RequestParam(defaultValue = "1") @Positive Integer page,
+            @RequestParam(defaultValue = "10") @Positive Integer size,
+            @RequestParam(required = false) String name
+    ) {
+        return ResponseUtils.createResponse("Fetch student course progress for a course successfully", dashboardService.getStudentCourseProgressesByCourseId(courseId, page, size, name));
     }
 }

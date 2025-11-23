@@ -1,10 +1,13 @@
 package com.norton.lms_backend.service.impl;
 
+import com.norton.lms_backend.exception.BadRequestException;
+import com.norton.lms_backend.exception.NotFoundException;
 import com.norton.lms_backend.model.dto.response.*;
 import com.norton.lms_backend.model.entity.*;
 import com.norton.lms_backend.repository.*;
 import com.norton.lms_backend.service.CourseService;
 import com.norton.lms_backend.service.DashboardService;
+import jakarta.validation.constraints.Positive;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -15,8 +18,10 @@ import org.springframework.stereotype.Service;
 
 import java.time.DayOfWeek;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.temporal.ChronoUnit;
+import java.util.ArrayList;
 import java.util.List;
-import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -247,6 +252,45 @@ public class DashboardServiceImpl implements DashboardService {
 
         return QuizAttemptsOverTimeResponse.builder()
                 .dailyAttempts(dailyAttempts)
+                .build();
+    }
+
+    @Override
+    public PagedResponse<StudentCourseProgressResponse> getStudentCourseProgressesByCourseId(Long courseId, Integer page, Integer size, String name) {
+        Course foundCourse = courseRepository.findById(courseId).orElseThrow(() -> new NotFoundException("course not found"));
+        if (!foundCourse.getAuthor().getId().equals(getCurrentUser().getId())) {
+            throw new BadRequestException("You are not the author of the course with ID: " + courseId);
+        }
+        Pageable pageable = PageRequest.of(page - 1, size, Sort.by(Sort.Direction.DESC, "createdAt"));
+
+        Page<JoinCourse> joinCourses = null;
+        if (name != null) {
+            joinCourses = joinCourseRepository.findByCourseAndStudentFullNameContaining(foundCourse, name, pageable);
+        } else {
+            joinCourses = joinCourseRepository.findByCourse(foundCourse, pageable);
+        }
+
+        List<StudentCourseProgressResponse> studentCourseProgressResponseList = new ArrayList<>();
+        List<CourseContent> courseContents = foundCourse.getContents();
+        for (JoinCourse joinCourse : joinCourses) {
+            AppUser student = joinCourse.getStudent();
+            List<CompleteContent> completeContents = completeContentRepository.findByStudentAndCourseContentCourse(student, foundCourse);
+            int progressInPercentage = (completeContents.size() / courseContents.size()) * 100;
+
+            StudentCourseProgressResponse studentCourseProgressResponse = StudentCourseProgressResponse.builder()
+                    .id(student.getId())
+                    .fullName(student.getFullName())
+                    .email(student.getEmail())
+                    .progressInPercentage(progressInPercentage)
+                    .enrolledDate(joinCourse.getCreatedAt().toLocalDate())
+                    .build();
+            studentCourseProgressResponseList.add(studentCourseProgressResponse);
+        }
+
+        PaginationInfo paginationInfo =  new PaginationInfo(joinCourses);
+        return PagedResponse.<StudentCourseProgressResponse>builder()
+                .items( studentCourseProgressResponseList)
+                .pagination(paginationInfo)
                 .build();
     }
 }
