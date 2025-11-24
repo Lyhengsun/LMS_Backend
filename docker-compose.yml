@@ -20,7 +20,7 @@ services:
       - redis
     networks:
       - lms_backend_network
-      -
+
   db:
     image: postgres:14.18
     container_name: lms-backend-db-container
