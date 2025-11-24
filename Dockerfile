@@ -1,28 +1,23 @@
-FROM gradle:jdk21-ubi-minimal AS build
+# build jar file
+FROM gradle:9.1.0-jdk21-alpine AS build
 
 WORKDIR /app
 
-# Copy the Maven descriptor first (for dependency download optimizations)
 COPY gradlew .
-COPY gradle ./gradle
-COPY settings.gradle .
-COPY build.gradle .
-COPY src ./src
+COPY gradle gradle
+# Download dependencies first (cached unless build files change)
+COPY build.gradle settings.gradle ./
+RUN ./gradlew dependencies --no-daemon
 
-# Pre-download dependencies (without running full build)
-RUN ./gradlew dependencies --no-daemon || true
+# Then copy source and build (only invalidated when source changes)
+COPY src src
+RUN ./gradlew bootJar --no-daemon --parallel --build-cache
 
-# Build the application (skip tests if desired)
-RUN ./gradlew clean build -x test --no-daemon
+# copy jar file
+FROM eclipse-temurin:21-jre-alpine-3.22 AS run
 
-# ──────────────────────────────
-# 2) Runtime Stage
-# ──────────────────────────────
-FROM eclipse-temurin:21-jre
 WORKDIR /app
 
-# Copy the generated .jar from the build stage
-COPY --from=build /app/build/libs/*.jar app.jar
+COPY --from=build /app/build/libs/*.jar /app/app.jar
 
-# Specify the command to run your application
-ENTRYPOINT ["java", "-jar", "app.jar"]
+CMD ["java", "-Xmx1G", "-jar", "/app/app.jar"]

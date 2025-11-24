@@ -22,7 +22,7 @@ services:
       - lms_backend_network
 
   db:
-    image: postgres:14.18
+    image: postgres:18
     container_name: lms-backend-db-container
     environment:
       POSTGRES_DB: postgres
