@@ -10,7 +10,7 @@ services:
       MINIO_USERNAME: admin
       MINIO_PASSWORD: "@Password123!"
       MINIO_BUCKET_NAME: common
-      SPRING_DATA_REDIS_HOST: redis-edu
+      SPRING_DATA_REDIS_HOST: 35.213.147.41
       SPRING_DATA_REDIS_PORT: 6379
     ports:
       - 8081:8090
